@@ -84,6 +84,17 @@ body.tv #list,body.tv .chips{display:none}
 .ld[hidden]{display:none}
 .ld i{width:16px;height:16px;border-radius:50%;border:2px solid #1d3a44;border-top-color:var(--g);animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+.ttl{display:flex;flex-direction:column;justify-content:center;min-width:0}
+.ver{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--mut);margin-top:3px}
+.rt{margin-left:auto;display:flex;align-items:center;gap:12px}
+.ld{margin-left:0}
+.nb.plus{flex:none;width:48px;height:48px;border-radius:50%;padding:0;font-size:30px;line-height:1;font-weight:400;display:grid;place-items:center}
+#airBar{position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top,0px));z-index:50;display:flex;align-items:center;gap:10px;background:#000;color:#ffb300;border:1.5px solid #ffb300;border-radius:16px;padding:10px 12px;font-size:14px;font-weight:700;box-shadow:0 0 14px rgba(255,179,0,.55)}
+#airBar[hidden]{display:none}
+#airBar span{flex:1}
+#airBar button{background:#ffb300;color:#000;border:0;border-radius:999px;padding:8px 14px;font:800 13px inherit;font-family:inherit}
+#airBar button.x{background:none;color:#ffb300;padding:6px 8px;font-size:16px}
+.ib.t.warn{color:#ffb300;border-color:#ffb300}
 /* mini player */
 #mini{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));background:#04090c;border:1.5px solid var(--c);border-radius:20px;padding:8px 10px;display:flex;align-items:center;gap:10px;box-shadow:0 0 16px rgba(0,240,255,.5),inset 0 0 14px rgba(0,240,255,.12);z-index:5;overflow:hidden}
 #mini .cv{width:46px;height:46px;border-radius:12px}
@@ -154,11 +165,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 </defs></svg>
 
 <header>
-  <div class="brand"><div class="logo"></div><h1>Anubis</h1><div class="ld" id="ld" hidden><i></i><span></span></div></div>
-  <div class="row">
-    <button class="nb" id="bFiles">＋ Fichiers</button>
-    <button class="nb m" id="bDir">Dossier</button>
-  </div>
+  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.01</span></div><div class="rt"><div class="ld" id="ld" hidden><i></i><span></span></div><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier">＋</button></div></div>
   <div class="tools">
     <input id="q" type="search" placeholder="Rechercher…">
     <select id="sort">
@@ -174,7 +181,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 <div class="count"><span id="count"></span><button class="lnk" id="clearAll">Vider la bibliothèque</button></div>
 <ul id="list"></ul>
 <div id="tiles"></div>
-<div class="empty" id="empty"><div class="logo big-logo"></div>Ajoute tes fichiers audio ou un dossier entier.<br>Ils sont enregistrés dans l’app : tu ne le fais qu’une fois.<br>Rien n’est envoyé sur Internet.</div>
+<div class="empty" id="empty"><div class="logo big-logo"></div>Ajoute un dossier avec le bouton ＋ en haut à droite.<br>Ils sont enregistrés dans l’app : tu ne le fais qu’une fois.<br>Rien n’est envoyé sur Internet.</div>
 
 <div id="mini" style="display:none">
   <div class="cv noart" id="mCv"></div>
@@ -204,9 +211,9 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 <div id="qp"><div class="qtop"><button class="ib t" id="qClose"><svg><use href="#i-down"/></svg></button><span>À suivre</span><button class="nb m" id="qClear">Vider</button></div><ul id="qList"></ul></div>
 <div id="sheet"><div class="box" id="shBox"><div class="st" id="shT"></div><button class="nb" id="shNext">Lire juste après</button><button class="nb m" id="shEnd">Ajouter à la file d’attente</button><button class="nb x" id="shDel">Retirer de la bibliothèque</button><button class="nb x" id="shCancel">Annuler</button></div></div>
 <div id="toast"></div>
-<input type="file" id="fFiles" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus,.aiff" multiple hidden>
 <input type="file" id="fDir" webkitdirectory multiple hidden>
 <audio id="au" playsinline x-webkit-airplay="allow"></audio>
+<div id="airBar" hidden><span>AirPlay déconnecté</span><button id="airGo">Reconnecter</button><button class="x" id="airX" aria-label="Fermer">✕</button></div>
 
 <script>
 const $=s=>document.querySelector(s), au=$('#au');
@@ -364,6 +371,7 @@ function renderTiles(){
     const c=document.createElement('span');c.textContent=all.length+' piste'+(all.length>1?'s':'');
     lb.append(n,c);b.append(mos,lb);
     b.onclick=()=>{
+      if(S.cur&&S.cur.folder===f&&S.folder===f){setTab(false);scrollTo(0,0);return}
       S.clr=false;S.shown=0;S.folder=f;S.q='';$('#q').value='';S.hist=[];S.shuf=null;
       const l=view();if(!l.length)return;
       play(S.shuffle?l[Math.floor(Math.random()*l.length)]:l[0]);
@@ -401,7 +409,7 @@ function play(t){
   const o=S.cur;if(o&&o!==t&&o.artBig){URL.revokeObjectURL(o.artBig);o.artBig=''}
   const prev=S.url;
   S.url=URL.createObjectURL(t.file);S.cur=t;S.userPaused=false;S.adv=null;S.starting=true;
-  au.src=S.url;startPlay(t);
+  au.src=S.url;startPlay(t);msHandlers();
   if(prev)setTimeout(()=>URL.revokeObjectURL(prev),5000);
   clearTimeout(S.wd);
   S.wd=setTimeout(()=>{S.starting=false;if(S.cur===t&&!S.userPaused&&au.paused&&!au.ended){au.load();startPlay(t,1)}},3500);
@@ -435,9 +443,7 @@ function prev(){
 }
 function toggle(){if(!S.cur){const l=view();if(l.length)play(l[0]);return}if(au.paused){S.userPaused=false;startPlay(S.cur)}else{S.userPaused=true;au.pause()}}
 
-$('#bFiles').onclick=()=>$('#fFiles').click();
 $('#bDir').onclick=()=>$('#fDir').click();
-$('#fFiles').onchange=e=>{addFiles(e.target.files);e.target.value=''};
 $('#fDir').onchange=e=>{addFiles(e.target.files);e.target.value=''};
 $('#q').oninput=e=>{S.q=e.target.value.toLowerCase();S.shown=0;render()};
 $('#sort').onchange=e=>{S.sort=e.target.value;S.shown=0;render()};
@@ -520,30 +526,66 @@ $('#fQ').onclick=()=>{renderQ();$('#qp').classList.add('open')};
 $('#qClose').onclick=()=>$('#qp').classList.remove('open');
 $('#qClear').onclick=()=>{S.queue=[];S.pn=0;S.shuf=null;S.clr=true;refQ();toast('Liste vidée')};
 
-if('mediaSession'in navigator){
-  const m=navigator.mediaSession;
-  m.setActionHandler('play',()=>{S.userPaused=false;if(S.cur)startPlay(S.cur);else au.play()});m.setActionHandler('pause',()=>{S.userPaused=true;au.pause()});
-  m.setActionHandler('nexttrack',()=>next(false));m.setActionHandler('previoustrack',prev);
+/* Écran verrouillé : piste suivante / précédente (et pas ±10 s) */
+function msHandlers(){
+  if(!('mediaSession'in navigator))return;
+  const m=navigator.mediaSession,set=(a,f)=>{try{m.setActionHandler(a,f)}catch(e){}};
+  set('play',()=>{S.userPaused=false;if(S.cur)startPlay(S.cur);else au.play()});
+  set('pause',()=>{S.userPaused=true;au.pause()});
+  set('nexttrack',()=>next(false));
+  set('previoustrack',prev);
+  set('seekbackward',null);set('seekforward',null);set('seekto',null);
 }
+msHandlers();
 /* Sortie audio : AirPlay / Bluetooth (iOS) */
 const bCast=$('#bCast');
 function castState(){bCast.classList.toggle('on',!!au.webkitCurrentPlaybackTargetIsWireless)}
+function airBar(on){$('#airBar').hidden=!on;bCast.classList.toggle('warn',on)}
 au.addEventListener('webkitcurrentplaybacktargetiswirelesschanged',()=>{
-  castState();toast(au.webkitCurrentPlaybackTargetIsWireless?'Diffusion AirPlay / Bluetooth activée':'Lecture sur cet appareil');
+  const w=!!au.webkitCurrentPlaybackTargetIsWireless;
+  castState();
+  if(w){
+    S.wasWireless=true;
+    toast('Diffusion AirPlay / Bluetooth activée');
+    if(S.airLost){S.airLost=false;airBar(false);if(S.cur&&!S.userPaused)startPlay(S.cur)}
+  }else{
+    const was=S.wasWireless;S.wasWireless=false;
+    toast('Lecture sur cet appareil');
+    /* coupure AirPlay : la musique s'est mise en pause toute seule → bandeau pour reconnecter en 1 appui */
+    if(was&&S.cur&&!S.userPaused)setTimeout(()=>{
+      if(au.paused&&!au.ended&&!S.userPaused&&!au.webkitCurrentPlaybackTargetIsWireless){S.airLost=true;airBar(true)}
+    },800);
+  }
 });
+au.addEventListener('webkitplaybacktargetavailabilitychanged',e=>{
+  if(e.availability==='available'&&S.airLost)toast('AirPlay de nouveau disponible');
+});
+au.addEventListener('playing',()=>{if(S.airLost){S.airLost=false;airBar(false)}});
+$('#airGo').onclick=()=>bCast.onclick();
+$('#airX').onclick=()=>{S.airLost=false;airBar(false)};
 bCast.onclick=()=>{
   if(typeof au.webkitShowPlaybackTargetPicker==='function')au.webkitShowPlaybackTargetPicker();
   else toast('Choisis la sortie dans le Centre de contrôle iOS');
 };
 let DB=null;
-const dbp=new Promise(res=>{try{const r=indexedDB.open('trx',1);r.onupgradeneeded=()=>r.result.createObjectStore('tracks',{keyPath:'key'});r.onsuccess=()=>{DB=r.result;res(DB)};r.onerror=r.onblocked=()=>res(null)}catch(e){res(null)}});
-async function tx(mode,fn){
+const dbp=new Promise(res=>{try{const r=indexedDB.open('trx',2);r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains('tracks'))d.createObjectStore('tracks',{keyPath:'key'});if(!d.objectStoreNames.contains('meta'))d.createObjectStore('meta',{keyPath:'key'})};r.onsuccess=()=>{DB=r.result;DB.onversionchange=()=>DB.close();res(DB)};r.onerror=r.onblocked=()=>res(null)}catch(e){res(null)}});
+async function tx(mode,fn,store){
   const d=await dbp;if(!d)return null;
-  return new Promise(res=>{try{const t=d.transaction('tracks',mode),q=fn(t.objectStore('tracks'));t.oncomplete=()=>res(q&&q.result!==undefined?q.result:true);t.onerror=t.onabort=()=>res(null)}catch(e){res(null)}});
+  return new Promise(res=>{try{const t=d.transaction(store||'tracks',mode),q=fn(t.objectStore(store||'tracks'));t.oncomplete=()=>res(q&&q.result!==undefined?q.result:true);t.onerror=t.onabort=()=>res(null)}catch(e){res(null)}});
 }
-function save(t){if(!S.tracks.includes(t))return Promise.resolve();return tx('readwrite',s=>s.put({key:t.key,file:t.file,name:t.name,folder:t.folder,mtime:t.mtime,title:t.title,artist:t.artist,artBlob:t.artBlob||null,thumbBlob:t.thumbBlob||null,artv:t.artv||0,kbps:t.kbps||0,tagged:!!t.tagged}))}
-$('#shDel').onclick=()=>{const t=shT;closeSheet();S.tracks=S.tracks.filter(x=>x!==t);S.queue=S.queue.filter(x=>x!==t);S.pn=Math.min(S.pn,S.queue.length);tx('readwrite',s=>s.delete(t.key));toast('Retiré de la bibliothèque');render();refQ()};
-function wipeLib(){au.pause();S.tracks=[];S.queue=[];S.pn=0;S.cur=null;S.hist=[];tx('readwrite',s=>s.clear());$('#mini').style.display='none';$('#full').classList.remove('open');render();refQ()};
+/* Le fichier audio n'est écrit qu'UNE fois (store 'tracks'). Les infos (titre, pochette, débit...) vont dans un store 'meta' léger. */
+function save(t){
+  if(!S.tracks.includes(t))return Promise.resolve();
+  const meta={key:t.key,name:t.name,folder:t.folder,mtime:t.mtime,title:t.title,artist:t.artist,artBlob:t.artBlob||null,thumbBlob:t.thumbBlob||null,artv:t.artv||0,kbps:t.kbps||0,tagged:!!t.tagged};
+  if(!t.stored){
+    t.stored=true;
+    return tx('readwrite',s=>s.put({key:t.key,file:t.file,name:t.name,folder:t.folder,mtime:t.mtime}))
+      .then(r=>{if(r===null){t.stored=false;toast('Espace de stockage insuffisant')}else return tx('readwrite',s=>s.put(meta),'meta')});
+  }
+  return tx('readwrite',s=>s.put(meta),'meta');
+}
+$('#shDel').onclick=()=>{const t=shT;closeSheet();S.tracks=S.tracks.filter(x=>x!==t);S.queue=S.queue.filter(x=>x!==t);S.pn=Math.min(S.pn,S.queue.length);tx('readwrite',s=>s.delete(t.key));tx('readwrite',s=>s.delete(t.key),'meta');toast('Retiré de la bibliothèque');render();refQ()};
+function wipeLib(){au.pause();S.tracks=[];S.queue=[];S.pn=0;S.cur=null;S.hist=[];tx('readwrite',s=>s.clear());tx('readwrite',s=>s.clear(),'meta');$('#mini').style.display='none';$('#full').classList.remove('open');render();refQ()};
 au.onloadedmetadata=()=>{const t=S.cur;if(t&&!t.kbps&&au.duration>0){t.kbps=Math.round(t.file.size*8/au.duration/1000);save(t);ui()}};
 let clrT;
 $('#clearAll').onclick=e=>{
@@ -566,8 +608,15 @@ $('#clearAll').onclick=e=>{
   const rec=await tx('readonly',s=>s.getAll());
   if(Array.isArray(rec)&&rec.length){
     const keys=new Set(S.tracks.map(t=>t.key));
-    rec.forEach(r=>{if(!keys.has(r.key))S.tracks.push({...r,art:r.thumbBlob?URL.createObjectURL(r.thumbBlob):''})});
-    render();processQ(S.tracks.filter(t=>!t.tagged||!t.kbps||(t.artBlob&&t.artv!==2)));
+    const meta=await tx('readonly',s=>s.getAll(),'meta');
+    const M=new Map(Array.isArray(meta)?meta.map(m=>[m.key,m]):[]);
+    rec.forEach(r=>{
+      if(keys.has(r.key))return;
+      const t={...r,...(M.get(r.key)||{}),stored:true};
+      t.art=t.thumbBlob?URL.createObjectURL(t.thumbBlob):'';
+      S.tracks.push(t);
+    });
+    render();processQ(S.tracks.filter(t=>!t.tagged||(t.artBlob&&t.artv!==2)));
   }
 })();
 render();
