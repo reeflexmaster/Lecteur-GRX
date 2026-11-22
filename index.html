@@ -95,6 +95,12 @@ body.tv #list,body.tv .chips{display:none}
 #airBar button{background:#ffb300;color:#000;border:0;border-radius:999px;padding:8px 14px;font:800 13px inherit;font-family:inherit}
 #airBar button.x{background:none;color:#ffb300;padding:6px 8px;font-size:16px}
 .ib.t.warn{color:#ffb300;border-color:#ffb300}
+li.off{opacity:.45}
+.tile.off{opacity:.5}
+#linkBar{display:flex;align-items:center;gap:10px;margin:12px 18px 0;padding:10px 12px;border:1.5px solid var(--m);border-radius:14px;color:var(--m);font-size:13px;font-weight:700}
+#linkBar[hidden]{display:none}
+#linkBar span{flex:1}
+#linkBar button{background:var(--m);color:#000;border:0;border-radius:999px;padding:8px 14px;font:800 12px inherit;font-family:inherit}
 /* mini player */
 #mini{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));background:#04090c;border:1.5px solid var(--c);border-radius:20px;padding:8px 10px;display:flex;align-items:center;gap:10px;box-shadow:0 0 16px rgba(0,240,255,.5),inset 0 0 14px rgba(0,240,255,.12);z-index:5;overflow:hidden}
 #mini .cv{width:46px;height:46px;border-radius:12px}
@@ -165,7 +171,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 </defs></svg>
 
 <header>
-  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.01</span></div><div class="rt"><div class="ld" id="ld" hidden><i></i><span></span></div><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier">＋</button></div></div>
+  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.02</span></div><div class="rt"><div class="ld" id="ld" hidden><i></i><span></span></div><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier">＋</button></div></div>
   <div class="tools">
     <input id="q" type="search" placeholder="Rechercher…">
     <select id="sort">
@@ -176,12 +182,13 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
     </select>
   </div>
 </header>
+<div id="linkBar" hidden><span></span><button id="linkGo">Relier mon dossier</button></div>
 <div class="tabs"><button class="tab on" id="tD">Dossiers</button><button class="tab" id="tL">Pistes</button></div>
 <div class="chips" id="chips"></div>
 <div class="count"><span id="count"></span><button class="lnk" id="clearAll">Vider la bibliothèque</button></div>
 <ul id="list"></ul>
 <div id="tiles"></div>
-<div class="empty" id="empty"><div class="logo big-logo"></div>Ajoute un dossier avec le bouton ＋ en haut à droite.<br>Ils sont enregistrés dans l’app : tu ne le fais qu’une fois.<br>Rien n’est envoyé sur Internet.</div>
+<div class="empty" id="empty"><div class="logo big-logo"></div>Ajoute un dossier avec le bouton ＋ en haut à droite.<br>La liste est mémorisée, mais pas la musique : à chaque ouverture, touche ＋ et choisis ton dossier dans Fichiers.<br>Rien n’est envoyé sur Internet.</div>
 
 <div id="mini" style="display:none">
   <div class="cv noart" id="mCv"></div>
@@ -253,17 +260,26 @@ async function setArt(t,src){
   t.artBlob=big;t.thumbBlob=th||big;t.art=URL.createObjectURL(t.thumbBlob);
 }
 const bigArt=t=>t.artBlob&&t.artv===2?(t.artBig||(t.artBig=URL.createObjectURL(t.artBlob))):'';
-const info=t=>[t.file.name.split('.').pop().toUpperCase(),t.kbps?t.kbps+' kbps':''].filter(Boolean).join(' · ');
+const info=t=>[(t.ext||(t.file?t.file.name.split('.').pop():'')).toUpperCase(),t.kbps?t.kbps+' kbps':''].filter(Boolean).join(' · ');
 
+function needLink(){toast('Choisis ton dossier pour relier la musique');$('#fDir').click()}
+function updLink(){const n=S.tracks.reduce((a,t)=>a+(t.file?0:1),0),b=$('#linkBar');b.hidden=!n;if(n)b.querySelector('span').textContent=n+' piste'+(n>1?'s':'')+' à relier'}
 function addFiles(files){
   const keys=new Set(S.tracks.map(t=>t.key)), fresh=[];
+  const byKey=new Map(),orph=new Map();let linked=0;
+  S.tracks.forEach(t=>{byKey.set(t.key,t);if(!t.file&&t.size)orph.set(t.name+'|'+t.size,t)});
   for(const f of files){
     if(!(f.type.startsWith('audio')||EXT.test(f.name)))continue;
-    const key=f.name+f.size+f.lastModified; if(keys.has(key))continue; keys.add(key);
+    const key=f.name+f.size+f.lastModified,nm=f.name.replace(/\.[^.]+$/,'');
+    let known=byKey.get(key);
+    if(!known){const o=orph.get(nm+'|'+f.size);if(o&&!o.file)known=o}
+    if(known){if(!known.file){known.file=f;linked++;if(!known.tagged)fresh.push(known)}orph.delete(nm+'|'+f.size);continue}
+    keys.add(key);
     const parts=(f.webkitRelativePath||'').split('/');
-    const t={key,file:f,name:f.name.replace(/\.[^.]+$/,''),folder:parts.length>1?parts[parts.length-2]:'Fichiers',mtime:f.lastModified,title:'',artist:'',art:''};
+    const t={key,file:f,size:f.size,ext:(f.name.split('.').pop()||'').toLowerCase(),name:f.name.replace(/\.[^.]+$/,''),folder:parts.length>1?parts[parts.length-2]:'Fichiers',mtime:f.lastModified,title:'',artist:'',art:''};
     S.tracks.push(t);fresh.push(t);
   }
+  if(linked)toast(linked+' piste'+(linked>1?'s':'')+' reliée'+(linked>1?'s':''));
   render();processQ(fresh);
 }
 let busy=false;const pend=[];
@@ -281,7 +297,7 @@ async function processQ(list){
   let tick;const bump=()=>{clearTimeout(tick);tick=setTimeout(()=>{render();if(S.cur)ui()},1500)};
   while(pend.length){
     const t=pend.shift();setLd();
-    if(!t.tagged&&window.jsmediatags){
+    if(!t.tagged&&t.file&&window.jsmediatags){
       await new Promise(res=>{try{jsmediatags.read(t.file,{onSuccess:({tags})=>{
         if(tags.title)t.title=tags.title;if(tags.artist)t.artist=tags.artist;
         const p=tags.picture;
@@ -291,7 +307,7 @@ async function processQ(list){
     }
     if(t._src){const s=t._src;t._src=null;await setArt(t,s)}
     else if(t.artBlob&&t.artv!==2)await setArt(t,t.artBlob);
-    if(!t.kbps&&au.paused&&!S.starting)await probe(t);
+    if(!t.kbps&&t.file&&au.paused&&!S.starting)await probe(t);
     save(t);bump();await new Promise(r=>setTimeout(r,40));
   }
   busy=false;setLd();
@@ -313,17 +329,17 @@ function render(){
   const l=view();
   $('#empty').style.display=S.tracks.length?'none':'block';$('#clearAll').style.display=S.tracks.length?'':'none';
   $('#count').textContent=S.tracks.length?l.length+' piste'+(l.length>1?'s':''):'';
-  renderTiles();
+  renderTiles();updLink();
   const ul=$('#list');ul.innerHTML='';
   const mk=t=>{
-    const li=document.createElement('li');li._t=t;if(t===S.cur)li.className='cur';
+    const li=document.createElement('li');li._t=t;if(t===S.cur)li.className='cur';if(!t.file)li.classList.add('off');
     li.innerHTML='<div class="cv noart"></div><div class="tt"><b></b><span></span></div>';
     setCv(li.querySelector('.cv'),t);
     li.querySelector('b').textContent=title(t);
     li.querySelector('span').textContent=sub(t)+' · '+DF.format(t.mtime);
     if(t.kbps){const br=document.createElement('div');br.className='br';br.textContent=t.kbps+' kbps';li.appendChild(br)}
     const ab=document.createElement('button');ab.className='ib t add';ab.innerHTML='<svg><use href="#i-plus"/></svg>';ab.onclick=e=>{e.stopPropagation();openSheet(t)};li.appendChild(ab);
-    li.onclick=()=>{S.clr=false;S.hist=[];S.shuf=null;play(t)};
+    li.onclick=()=>{if(!t.file){needLink();return}S.clr=false;S.hist=[];S.shuf=null;play(t)};
     return li;
   };
   listMore(ul,l,mk);
@@ -363,7 +379,8 @@ function renderTiles(){
   folders.forEach(f=>{
     const all=G[f].sort(CMP[S.sort]);
     const first=all.slice(0,4);
-    const b=document.createElement('button');b._f=f;b.className='tile'+(S.cur&&S.cur.folder===f?' cur':'');
+    const off=!G[f].some(x=>x.file);
+    const b=document.createElement('button');b._f=f;b.className='tile'+(S.cur&&S.cur.folder===f?' cur':'')+(off?' off':'');
     const mos=document.createElement('div');mos.className='mos n'+first.length;
     first.forEach(t=>{const d=document.createElement('div');if(t.art)d.style.backgroundImage='url("'+t.art+'")';else d.className='noart';mos.appendChild(d)});
     const lb=document.createElement('div');lb.className='lbl';
@@ -373,7 +390,7 @@ function renderTiles(){
     b.onclick=()=>{
       if(S.cur&&S.cur.folder===f&&S.folder===f){setTab(false);scrollTo(0,0);return}
       S.clr=false;S.shown=0;S.folder=f;S.q='';$('#q').value='';S.hist=[];S.shuf=null;
-      const l=view();if(!l.length)return;
+      const l=view().filter(x=>x.file);if(!l.length){needLink();return}
       play(S.shuffle?l[Math.floor(Math.random()*l.length)]:l[0]);
       $('#full').classList.add('open');
     };
@@ -406,6 +423,7 @@ function startPlay(t,n){
   });
 }
 function play(t){
+  if(!t.file){toast('Musique non reliée : touche ＋ pour choisir ton dossier');return}
   const o=S.cur;if(o&&o!==t&&o.artBig){URL.revokeObjectURL(o.artBig);o.artBig=''}
   const prev=S.url;
   S.url=URL.createObjectURL(t.file);S.cur=t;S.userPaused=false;S.adv=null;S.starting=true;
@@ -418,7 +436,7 @@ function play(t){
 function shuffled(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function autoList(){
   if(S.clr)return[];
-  const l=view();
+  const l=view().filter(x=>x.file);
   if(S.shuffle){
     if(S.shuf)S.shuf=S.shuf.filter(x=>x!==S.cur&&l.includes(x));
     if(!S.shuf||!S.shuf.length)S.shuf=shuffled(l.filter(x=>x!==S.cur));
@@ -432,18 +450,19 @@ function next(auto){
   if(S.queue.length){if(S.cur)S.hist.push(S.cur);return play(popQ())}
   const a=autoList();
   if(a.length){if(S.cur)S.hist.push(S.cur);return play(a[0])}
-  const l=view();if(!l.length)return;
+  const l=view().filter(x=>x.file);if(!l.length)return;
   if(auto&&S.repeat===0){au.pause();return}
   S.shuf=null;S.clr=false;play(l[0]);
 }
 function prev(){
   if(au.currentTime>3||!S.cur){au.currentTime=0;return}
   if(S.hist.length)return play(S.hist.pop());
-  const l=view(),i=l.indexOf(S.cur);if(l.length)play(l[(i-1+l.length)%l.length]);
+  const l=view().filter(x=>x.file),i=l.indexOf(S.cur);if(l.length)play(l[(i-1+l.length)%l.length]);
 }
-function toggle(){if(!S.cur){const l=view();if(l.length)play(l[0]);return}if(au.paused){S.userPaused=false;startPlay(S.cur)}else{S.userPaused=true;au.pause()}}
+function toggle(){if(!S.cur){const l=view().filter(x=>x.file);if(l.length)play(l[0]);else needLink();return}if(au.paused){S.userPaused=false;startPlay(S.cur)}else{S.userPaused=true;au.pause()}}
 
 $('#bDir').onclick=()=>$('#fDir').click();
+$('#linkGo').onclick=()=>$('#fDir').click();
 $('#fDir').onchange=e=>{addFiles(e.target.files);e.target.value=''};
 $('#q').oninput=e=>{S.q=e.target.value.toLowerCase();S.shown=0;render()};
 $('#sort').onchange=e=>{S.sort=e.target.value;S.shown=0;render()};
@@ -573,16 +592,11 @@ async function tx(mode,fn,store){
   const d=await dbp;if(!d)return null;
   return new Promise(res=>{try{const t=d.transaction(store||'tracks',mode),q=fn(t.objectStore(store||'tracks'));t.oncomplete=()=>res(q&&q.result!==undefined?q.result:true);t.onerror=t.onabort=()=>res(null)}catch(e){res(null)}});
 }
-/* Le fichier audio n'est écrit qu'UNE fois (store 'tracks'). Les infos (titre, pochette, débit...) vont dans un store 'meta' léger. */
+/* La musique n'est PAS copiée dans l'app : on ne garde que la liste (titres, pochettes réduites, débit). Les fichiers sont relus depuis Fichiers. */
 function save(t){
   if(!S.tracks.includes(t))return Promise.resolve();
-  const meta={key:t.key,name:t.name,folder:t.folder,mtime:t.mtime,title:t.title,artist:t.artist,artBlob:t.artBlob||null,thumbBlob:t.thumbBlob||null,artv:t.artv||0,kbps:t.kbps||0,tagged:!!t.tagged};
-  if(!t.stored){
-    t.stored=true;
-    return tx('readwrite',s=>s.put({key:t.key,file:t.file,name:t.name,folder:t.folder,mtime:t.mtime}))
-      .then(r=>{if(r===null){t.stored=false;toast('Espace de stockage insuffisant')}else return tx('readwrite',s=>s.put(meta),'meta')});
-  }
-  return tx('readwrite',s=>s.put(meta),'meta');
+  const meta={key:t.key,name:t.name,folder:t.folder,mtime:t.mtime,size:t.size||0,ext:t.ext||'',title:t.title,artist:t.artist,artBlob:t.artBlob||null,thumbBlob:t.thumbBlob||null,artv:t.artv||0,kbps:t.kbps||0,tagged:!!t.tagged};
+  return tx('readwrite',s=>s.put(meta),'meta').then(r=>{if(r===null&&!save.w){save.w=1;toast('Espace de stockage insuffisant')}return r});
 }
 $('#shDel').onclick=()=>{const t=shT;closeSheet();S.tracks=S.tracks.filter(x=>x!==t);S.queue=S.queue.filter(x=>x!==t);S.pn=Math.min(S.pn,S.queue.length);tx('readwrite',s=>s.delete(t.key));tx('readwrite',s=>s.delete(t.key),'meta');toast('Retiré de la bibliothèque');render();refQ()};
 function wipeLib(){au.pause();S.tracks=[];S.queue=[];S.pn=0;S.cur=null;S.hist=[];tx('readwrite',s=>s.clear());tx('readwrite',s=>s.clear(),'meta');$('#mini').style.display='none';$('#full').classList.remove('open');render();refQ()};
@@ -606,17 +620,36 @@ $('#clearAll').onclick=e=>{
 (async()=>{
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
   const rec=await tx('readonly',s=>s.getAll());
-  if(Array.isArray(rec)&&rec.length){
-    const keys=new Set(S.tracks.map(t=>t.key));
+  {
+    const legacy=Array.isArray(rec)?rec:[];
     const meta=await tx('readonly',s=>s.getAll(),'meta');
-    const M=new Map(Array.isArray(meta)?meta.map(m=>[m.key,m]):[]);
-    rec.forEach(r=>{
+    const M=new Map((Array.isArray(meta)?meta:[]).map(m=>[m.key,m]));
+    const all=new Map();
+    legacy.forEach(r=>{const m=M.get(r.key)||{};all.set(r.key,{...r,...m,_leg:1,size:m.size||(r.file?r.file.size:0),ext:m.ext||(r.file?r.file.name.split('.').pop().toLowerCase():'')})});
+    M.forEach((m,k)=>{if(!all.has(k))all.set(k,{...m})});
+    const keys=new Set(S.tracks.map(t=>t.key)),mig=[];
+    all.forEach(r=>{
       if(keys.has(r.key))return;
-      const t={...r,...(M.get(r.key)||{}),stored:true};
+      const leg=r._leg;delete r._leg;
+      const t={...r,file:null};
       t.art=t.thumbBlob?URL.createObjectURL(t.thumbBlob):'';
-      S.tracks.push(t);
+      S.tracks.push(t);if(leg)mig.push(t);
     });
-    render();processQ(S.tracks.filter(t=>!t.tagged||(t.artBlob&&t.artv!==2)));
+    render();
+    /* Migration depuis l'ancienne version : on garde la liste, puis on supprime les copies audio stockées dans Safari */
+    if(mig.length){
+      const ld=$('#ld');ld.hidden=false;
+      let ok=true,n=0;
+      for(const t of mig){
+        try{if(t.artBlob&&t.artv!==2)await setArt(t,t.artBlob)}catch(e){}
+        const r=await save(t);if(r===null)ok=false;
+        if(++n%25===0){ld.querySelector('span').textContent=mig.length-n;render()}
+        await new Promise(r=>setTimeout(r,0));
+      }
+      if(ok)await tx('readwrite',s=>s.clear());
+      setLd();render();
+      if(ok)toast('Copies audio supprimées : relie ton dossier pour écouter');
+    }
   }
 })();
 render();
