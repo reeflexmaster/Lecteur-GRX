@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Anubis">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+<script>try{if(navigator.standalone&&localStorage.getItem('anubis.noH')!=='1')document.documentElement.classList.add('sa')}catch(e){}</script>
 <style>
 :root{--c:#00f0ff;--m:#ff2bd6;--g:#b6ff00;--bg:#000;--tx:#f4fbff;--mut:#6f8a96;--line:#10242b;color-scheme:dark;
 box-sizing:border-box}
@@ -104,7 +105,9 @@ li.off{opacity:.45}
 #linkBar button{background:var(--m);color:#000;border:0;border-radius:999px;padding:8px 14px;font:800 12px inherit;font-family:inherit}
 .pc{flex:none;font-size:11px;font-weight:700;color:var(--c);text-shadow:0 0 6px rgba(0,240,255,.6)}
 .pc.z{color:var(--mut);text-shadow:none;opacity:.6}
-body{position:fixed;top:0;left:0;width:100%;height:var(--H,100%);min-height:0;padding:0;overflow:hidden;transform:translateZ(0)}
+html{overflow:hidden}
+body{position:relative;height:100vh;height:100dvh;min-height:0;padding:0;overflow:hidden;contain:layout}
+html.sa,html.sa body{height:100lvh}
 #main{position:absolute;inset:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:calc(env(safe-area-inset-top,0px) + 10px);padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 body.pl #main{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 *::-webkit-scrollbar{display:none;width:0;height:0}
@@ -201,7 +204,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 
 <div id="main">
 <header>
-  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.10</span></div><div class="rt"><div class="ld" id="ld" hidden><i></i><span></span></div><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier">＋</button></div></div>
+  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.11</span></div><div class="rt"><div class="ld" id="ld" hidden><i></i><span></span></div><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier">＋</button></div></div>
   <div class="tools">
     <input id="q" type="search" placeholder="Rechercher…">
     <select id="sort">
@@ -731,8 +734,8 @@ function updUse(){
 /* Hauteur plein écran : corrige la bande noire quand iOS annonce une fenêtre trop courte */
 function fixH(){
   let off='0';try{off=localStorage.getItem('anubis.noH')}catch(e){}
-  const on=off!=='1',h=(on&&navigator.standalone&&innerHeight>innerWidth&&screen.height>innerHeight+20)?screen.height:0;
-  document.documentElement.style.setProperty('--H',h?h+'px':'100%');
+  const on=off!=='1';
+  document.documentElement.classList.toggle('sa',on&&!!navigator.standalone);
   const b=$('#setH b');if(b)b.textContent='Hauteur plein écran : '+(on?'activée':'désactivée');
 }
 fixH();addEventListener('resize',fixH);addEventListener('orientationchange',fixH);
