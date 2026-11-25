@@ -104,8 +104,9 @@ li.off{opacity:.45}
 #linkBar button{background:var(--m);color:#000;border:0;border-radius:999px;padding:8px 14px;font:800 12px inherit;font-family:inherit}
 .pc{flex:none;font-size:11px;font-weight:700;color:var(--c);text-shadow:0 0 6px rgba(0,240,255,.6)}
 .pc.z{color:var(--mut);text-shadow:none;opacity:.6}
-html{overflow:hidden}
-body{position:fixed;inset:0;min-height:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:calc(env(safe-area-inset-top,0px) + 10px)}
+body{position:fixed;top:0;left:0;width:100%;height:var(--H,100%);min-height:0;padding:0;overflow:hidden;transform:translateZ(0)}
+#main{position:absolute;inset:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:calc(env(safe-area-inset-top,0px) + 10px);padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+body.pl #main{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 *::-webkit-scrollbar{display:none;width:0;height:0}
 *{scrollbar-width:none;touch-action:pan-x pan-y}
 input:not([type=range]){font-size:16px}
@@ -198,8 +199,9 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
 </defs></svg>
 
+<div id="main">
 <header>
-  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.09</span></div><div class="rt"><div class="ld" id="ld" hidden><i></i><span></span></div><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier">＋</button></div></div>
+  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.10</span></div><div class="rt"><div class="ld" id="ld" hidden><i></i><span></span></div><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier">＋</button></div></div>
   <div class="tools">
     <input id="q" type="search" placeholder="Rechercher…">
     <select id="sort">
@@ -218,6 +220,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 <div id="tiles"></div>
 <div class="empty" id="empty"><div class="logo big-logo"></div>Ajoute un dossier avec le bouton ＋ en haut à droite.<br>La liste est mémorisée, mais pas la musique : à chaque ouverture, touche ＋ et choisis ton dossier dans Fichiers.<br>Rien n’est envoyé sur Internet.</div>
 
+</div>
 <div id="mini" style="display:none">
   <div class="cv noart" id="mCv"></div>
   <div class="tt" id="mOpen"><b id="mT">—</b><span id="mS"></span></div>
@@ -263,7 +266,9 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
       <div class="sinfo" id="setUse"></div>
       <button class="srow danger" id="setWipe"><b>Vider le cache de l’application</b><span>Supprime toutes les données (liste, pochettes, réglages) pour libérer de l’espace. Tes fichiers dans Fichiers ne sont pas touchés.</span></button>
     </div>
-    <div class="sgrp"><div class="shd">Affichage</div><div class="sinfo" id="setDiag"></div></div>
+    <div class="sgrp"><div class="shd">Affichage</div>
+      <button class="srow" id="setH"><b></b><span>Si une bande noire apparaît en bas de l’écran, laisse activé. Si le bas de l’app est coupé, désactive.</span></button>
+      <div class="sinfo" id="setDiag" style="margin-top:10px"></div></div>
     <div class="sfoot" id="setVer"></div>
   </div>
 </div>
@@ -458,7 +463,7 @@ function renderTiles(){
     const c=document.createElement('span');c.textContent=all.length+' piste'+(all.length>1?'s':'');
     lb.append(n,c);b.append(mos,lb);
     b.onclick=()=>{
-      if(S.cur&&S.cur.folder===f&&S.folder===f){setTab(false,1);document.body.scrollTo(0,0);return}
+      if(S.cur&&S.cur.folder===f&&S.folder===f){setTab(false,1);$('#main').scrollTo(0,0);return}
       S.clr=false;S.shown=0;S.folder=f;S.q='';$('#q').value='';S.hist=[];S.shuf=null;
       const l=view().filter(x=>x.file);if(!l.length){needLink();return}
       play(S.shuffle?l[Math.floor(Math.random()*l.length)]:l[0]);
@@ -723,13 +728,22 @@ function updUse(){
   const e=$('#setUse');e.textContent='';
   if(navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(r=>{e.textContent='Espace utilisé par l’app : '+fmtMo(r.usage||0)}).catch(()=>{});
 }
+/* Hauteur plein écran : corrige la bande noire quand iOS annonce une fenêtre trop courte */
+function fixH(){
+  let off='0';try{off=localStorage.getItem('anubis.noH')}catch(e){}
+  const on=off!=='1',h=(on&&navigator.standalone&&innerHeight>innerWidth&&screen.height>innerHeight+20)?screen.height:0;
+  document.documentElement.style.setProperty('--H',h?h+'px':'100%');
+  const b=$('#setH b');if(b)b.textContent='Hauteur plein écran : '+(on?'activée':'désactivée');
+}
+fixH();addEventListener('resize',fixH);addEventListener('orientationchange',fixH);
+$('#setH').onclick=()=>{try{localStorage.setItem('anubis.noH',localStorage.getItem('anubis.noH')==='1'?'0':'1')}catch(e){}fixH()};
 function diag(){
   const p=document.createElement('div');p.style.cssText='position:fixed;visibility:hidden;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)';
   document.body.appendChild(p);const cs=getComputedStyle(p),st=parseInt(cs.paddingTop)||0,sb=parseInt(cs.paddingBottom)||0;p.remove();
   const vv=window.visualViewport;
-  $('#setDiag').textContent='Fenêtre '+innerWidth+'×'+innerHeight+(vv?' · visuelle '+Math.round(vv.width)+'×'+Math.round(vv.height):'')+' · écran '+screen.width+'×'+screen.height+' · zones sûres '+st+' / '+sb+(navigator.standalone?' · mode app':' · mode navigateur');
+  $('#setDiag').textContent='Fenêtre '+innerWidth+'×'+innerHeight+(vv?' · visuelle '+Math.round(vv.width)+'×'+Math.round(vv.height):'')+' · écran '+screen.width+'×'+screen.height+' · zones sûres '+st+' / '+sb+' · app '+document.body.offsetHeight+(navigator.standalone?' · mode app':' · mode navigateur');
 }
-function openSettings(){$('#setVer').textContent='Anubis · '+$('.ver').textContent;updUse();diag();setEl.classList.add('open')}
+function openSettings(){$('#setVer').textContent='Anubis · '+$('.ver').textContent;updUse();fixH();diag();setEl.classList.add('open')}
 function closeSettings(){setEl.classList.remove('open')}
 $('#bSet').onclick=openSettings;
 $('#setBack').onclick=closeSettings;
