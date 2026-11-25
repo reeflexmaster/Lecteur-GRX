@@ -13,11 +13,12 @@
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 <style>
 :root{--c:#00f0ff;--m:#ff2bd6;--g:#b6ff00;--bg:#000;--tx:#f4fbff;--mut:#6f8a96;--line:#10242b;color-scheme:dark;
-box-sizing:border-box;padding-top:calc(env(safe-area-inset-top,0px) + 10px)}
+box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:#000;color:var(--tx);font-family:-apple-system,system-ui,"Segoe UI",sans-serif}
-body{min-height:100vh;padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+body{min-height:100vh;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+body.pl{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 header{padding:18px 18px 6px}
 h1{margin:0 0 14px;font-size:26px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--c);text-shadow:0 0 8px var(--c),0 0 24px var(--c)}
 h1 i{font-style:normal;color:var(--m);text-shadow:0 0 8px var(--m),0 0 24px var(--m)}
@@ -103,8 +104,8 @@ li.off{opacity:.45}
 #linkBar button{background:var(--m);color:#000;border:0;border-radius:999px;padding:8px 14px;font:800 12px inherit;font-family:inherit}
 .pc{flex:none;font-size:11px;font-weight:700;color:var(--c);text-shadow:0 0 6px rgba(0,240,255,.6)}
 .pc.z{color:var(--mut);text-shadow:none;opacity:.6}
-html{height:100%;overflow:hidden}
-body{height:100%;min-height:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch}
+html{overflow:hidden}
+body{position:fixed;inset:0;min-height:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:calc(env(safe-area-inset-top,0px) + 10px)}
 *::-webkit-scrollbar{display:none;width:0;height:0}
 *{scrollbar-width:none;touch-action:pan-x pan-y}
 input:not([type=range]){font-size:16px}
@@ -122,8 +123,8 @@ input:not([type=range]){font-size:16px}
 .srow.danger b{color:var(--m)}
 .sinfo{margin:0 4px 10px;font-size:13px;color:var(--mut)}
 .sfoot{margin-top:28px;text-align:center;font-size:11px;color:var(--mut);letter-spacing:1.5px}
-#full .meta .pc{margin-top:6px}
-html,body{overscroll-behavior:none}
+#full .meta .inf{display:flex;justify-content:center;align-items:baseline;gap:10px;margin-top:5px}
+#full .meta .inf em{margin-top:0}
 /* mini player */
 #mini{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));background:#04090c;border:1.5px solid var(--c);border-radius:20px;padding:8px 10px;display:flex;align-items:center;gap:10px;box-shadow:0 0 16px rgba(0,240,255,.5),inset 0 0 14px rgba(0,240,255,.12);z-index:5;overflow:hidden}
 #mini .cv{width:46px;height:46px;border-radius:12px}
@@ -198,7 +199,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 </defs></svg>
 
 <header>
-  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.07</span></div><div class="rt"><div class="ld" id="ld" hidden><i></i><span></span></div><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier">＋</button></div></div>
+  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.08</span></div><div class="rt"><div class="ld" id="ld" hidden><i></i><span></span></div><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier">＋</button></div></div>
   <div class="tools">
     <input id="q" type="search" placeholder="Rechercher…">
     <select id="sort">
@@ -230,7 +231,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
   <div class="bg" id="fBg"></div>
   <div class="top"><button class="ib t" id="fClose"><svg><use href="#i-down"/></svg></button><span>En lecture</span><div class="grp"><button class="ib t" id="bCast" aria-label="Sortie audio : AirPlay / Bluetooth"><svg><use href="#i-cast"/></svg></button><button class="ib t" id="fQ"><svg><use href="#i-list"/></svg><span class="bd" id="qBd"></span></button></div></div>
   <div class="art"><div class="cv noart" id="fCv"></div></div>
-  <div class="meta"><b id="fT">—</b><span id="fS"></span><em id="fB"></em><div class="pc" id="fPc"></div></div>
+  <div class="meta"><b id="fT">—</b><span id="fS"></span><div class="inf"><em id="fB"></em><small class="pc" id="fPc" hidden></small></div></div>
   <input type="range" id="seek" min="0" max="1000" value="0">
   <div class="time"><span id="tc">0:00</span><span id="td">0:00</span></div>
   <div class="ctl">
@@ -472,7 +473,7 @@ $('#tL').onclick=()=>{if(document.body.classList.contains('tv'))setTab(false,1)}
 $('#tD').onclick=()=>{if(!document.body.classList.contains('tv'))setTab(true,-1)};
 function ui(){
   const t=S.cur;if(!t)return;
-  $('#mini').style.display='flex';
+  $('#mini').style.display='flex';document.body.classList.add('pl');
   $('#mT').textContent=$('#fT').textContent=title(t);
   $('#mS').textContent=$('#fS').textContent=sub(t);
   setCv($('#mCv'),t);setCv($('#fCv'),{art:t.artBig||t.art});if(!t.artBig&&t.artv===2)loadBig(t).then(u=>{if(u&&S.cur===t)ui()});$('#fB').textContent=info(t);pcSet($('#fPc'),t);$('#fPc').hidden=!t.plays;
@@ -703,7 +704,7 @@ function save(t){
   return tx('readwrite',s=>s.put(meta),'meta').then(r=>{if(r===null&&!save.w){save.w=1;toast('Espace de stockage insuffisant')}return r});
 }
 $('#shDel').onclick=()=>{const t=shT;closeSheet();S.tracks=S.tracks.filter(x=>x!==t);S.queue=S.queue.filter(x=>x!==t);S.pn=Math.min(S.pn,S.queue.length);tx('readwrite',s=>s.delete(t.key));tx('readwrite',s=>s.delete(t.key),'meta');toast('Retiré de la bibliothèque');render();refQ()};
-function wipeLib(){au.pause();S.tracks=[];S.queue=[];S.pn=0;S.cur=null;S.hist=[];tx('readwrite',s=>s.clear());tx('readwrite',s=>s.clear(),'meta');$('#mini').style.display='none';$('#full').classList.remove('open');render();refQ()};
+function wipeLib(){au.pause();S.tracks=[];S.queue=[];S.pn=0;S.cur=null;S.hist=[];tx('readwrite',s=>s.clear());tx('readwrite',s=>s.clear(),'meta');$('#mini').style.display='none';document.body.classList.remove('pl');$('#full').classList.remove('open');render();refQ()};
 au.onloadedmetadata=()=>{const t=S.cur;if(t&&!t.kbps&&au.duration>0){t.kbps=Math.round(t.file.size*8/au.duration/1000);save(t);ui()}};
 /* Animations d'ouverture / fermeture de la page de lecture */
 function openFull(h){
