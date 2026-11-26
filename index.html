@@ -129,6 +129,22 @@ input:not([type=range]){font-size:16px}
 .sfoot{margin-top:28px;text-align:center;font-size:11px;color:var(--mut);letter-spacing:1.5px}
 #full .meta .inf{display:flex;justify-content:center;align-items:baseline;gap:10px;margin-top:5px}
 #full .meta .inf em{margin-top:0}
+*{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea{-webkit-user-select:text;user-select:text}
+img{-webkit-user-drag:none}
+#reorder{display:none;color:var(--c)}
+body.tv #reorder{display:inline-block}
+.tile .grip,.tile .top1{position:absolute;top:8px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.7);border:1.5px solid var(--m);color:var(--m);display:grid;place-items:center;font-size:22px;font-weight:800;z-index:3}
+.tile .grip{right:8px;touch-action:none}
+.tile .top1{left:8px;border-color:var(--c);color:var(--c)}
+.tile.drag{z-index:6;opacity:.92;box-shadow:0 12px 32px rgba(255,43,214,.65);transition:none}
+body.ro .tile{border-style:dashed}
+.nb.plus{position:relative}
+.plus .ld{position:absolute;inset:0;display:grid;place-items:center;background:#000;border-radius:50%;gap:0;font-size:16px;font-weight:800;text-shadow:none}
+.plus .ld[hidden]{display:none}
+.plus .ld i{position:absolute;inset:-2px;width:auto;height:auto;border:2.5px solid transparent;border-top-color:var(--g)}
+.plus .ld span{position:relative;line-height:1}
+.ld[data-len="4"] span,.ld[data-len="5"] span{font-size:12px}
 /* mini player */
 #mini{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));background:#04090c;border:1.5px solid var(--c);border-radius:20px;padding:8px 10px;display:flex;align-items:center;gap:10px;box-shadow:0 0 16px rgba(0,240,255,.5),inset 0 0 14px rgba(0,240,255,.12);z-index:5;overflow:hidden}
 #mini .cv{width:46px;height:46px;border-radius:12px}
@@ -204,7 +220,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 
 <div id="main">
 <header>
-  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.12</span></div><div class="rt"><div class="ld" id="ld" hidden><i></i><span></span></div><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier">＋</button></div></div>
+  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.14</span></div><div class="rt"><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier"><span class="pl">＋</span><span class="ld" id="ld" hidden><i></i><span></span></span></button></div></div>
   <div class="tools">
     <input id="q" type="search" placeholder="Rechercher…">
     <select id="sort">
@@ -218,7 +234,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 <div id="linkBar" hidden><span></span><button id="linkGo">Relier mon dossier</button></div>
 <div class="tabs"><button class="tab on" id="tD">Dossiers</button><button class="tab" id="tL">Pistes</button></div>
 <div class="chips" id="chips"></div>
-<div class="count"><span id="count"></span><button class="lnk" id="clearAll">Vider la bibliothèque</button></div>
+<div class="count"><span id="count"></span><button class="lnk" id="reorder">Réorganiser</button><button class="lnk" id="clearAll">Vider la bibliothèque</button></div>
 <ul id="list"></ul>
 <div id="tiles"></div>
 <div class="empty" id="empty"><div class="logo big-logo"></div>Ajoute un dossier avec le bouton ＋ en haut à droite.<br>La liste est mémorisée, mais pas la musique : à chaque ouverture, touche ＋ et choisis ton dossier dans Fichiers.<br>Rien n’est envoyé sur Internet.</div>
@@ -264,6 +280,9 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
       <button class="srow" id="setExp"><b>Exporter les compteurs</b><span>Crée un fichier à enregistrer dans Fichiers (ou à partager).</span></button>
       <button class="srow" id="setImp" style="margin-top:10px"><b>Importer les compteurs</b><span>Fusionne un fichier exporté : pour chaque piste, le plus grand nombre est conservé. Les pistes pas encore dans la liste reçoivent leur compteur dès que tu les ajoutes.</span></button>
       <input type="file" id="fPlays" accept=".json,application/json" hidden>
+    </div>
+    <div class="sgrp"><div class="shd">Bibliothèque</div>
+      <button class="srow" id="setPrune"><b>Retirer les pistes introuvables</b><span>Après avoir relié ton dossier, supprime de la liste les pistes dont le fichier n’existe plus dans Fichiers.</span></button>
     </div>
     <div class="sgrp"><div class="shd">Données</div>
       <div class="sinfo" id="setUse"></div>
@@ -355,7 +374,7 @@ function needLink(){toast('Choisis ton dossier pour relier la musique');$('#fDir
 function updLink(){const n=S.tracks.reduce((a,t)=>a+(t.file?0:1),0),b=$('#linkBar');b.hidden=!n;if(n)b.querySelector('span').textContent=n+' piste'+(n>1?'s':'')+' à relier'+(linkArmed?' · touche l’écran':'')}
 function addFiles(files){
   const keys=new Set(S.tracks.map(t=>t.key)), fresh=[];
-  const byKey=new Map(),orph=new Map();let linked=0;
+  const byKey=new Map(),orph=new Map();let linked=0,added=0;
   S.tracks.forEach(t=>{byKey.set(t.key,t);if(!t.file&&t.size)orph.set(t.name+'|'+t.size,t)});
   for(const f of files){
     if(!(f.type.startsWith('audio')||EXT.test(f.name)))continue;
@@ -366,14 +385,19 @@ function addFiles(files){
     keys.add(key);
     const parts=(f.webkitRelativePath||'').split('/');
     const t={key,file:f,size:f.size,ext:(f.name.split('.').pop()||'').toLowerCase(),name:f.name.replace(/\.[^.]+$/,''),folder:parts.length>1?parts[parts.length-2]:'Fichiers',mtime:f.lastModified,title:'',artist:'',art:''};
-    S.tracks.push(t);fresh.push(t);
+    S.tracks.push(t);fresh.push(t);added++;
   }
   const pp0=getPP();if(Object.keys(pp0).length)fresh.forEach(t=>applyPP(t,pp0));
-  if(linked)toast(linked+' piste'+(linked>1?'s':'')+' reliée'+(linked>1?'s':''));
+  const msg=[];
+  if(added)msg.push(added+' nouvelle'+(added>1?'s':'')+' piste'+(added>1?'s':''));
+  if(linked)msg.push(linked+' reliée'+(linked>1?'s':''));
+  const miss=S.tracks.filter(t=>!t.file).length;
+  if(msg.length&&miss)msg.push(miss+' non reliée'+(miss>1?'s':''));
+  if(msg.length)toast(msg.join(' · '));else if(files.length)toast('Déjà à jour');
   render();processQ(fresh);
 }
 let busy=false;const pend=[];
-function setLd(){const e=$('#ld');e.hidden=!busy;e.querySelector('span').textContent=busy&&pend.length?pend.length:''}
+function setLd(){const e=$('#ld');e.hidden=!busy;const n=busy&&pend.length?pend.length:'';e.querySelector('span').textContent=n;e.dataset.len=String(n).length}
 function probe(t){return new Promise(res=>{
   const a=new Audio(),u=URL.createObjectURL(t.file);a.preload='metadata';
   let to;const done=()=>{clearTimeout(to);a.onloadedmetadata=a.onerror=null;a.removeAttribute('src');try{a.load()}catch(e){}URL.revokeObjectURL(u);res()};
@@ -410,7 +434,7 @@ function view(){
   return l.sort(c);
 }
 function render(){
-  const folders=[...new Set(S.tracks.map(t=>t.folder))].sort();
+  const folders=orderFolders([...new Set(S.tracks.map(t=>t.folder))]);
   const ch=$('#chips');ch.innerHTML='';
   if(folders.length>1)['all',...folders].forEach(f=>{
     const b=document.createElement('button');b.className='chip'+(S.folder===f?' on':'');
@@ -464,7 +488,7 @@ function markCur(){
 function renderTiles(){
   if(!document.body.classList.contains('tv'))return;
   const box=$('#tiles');box.innerHTML='';
-  const folders=[...new Set(S.tracks.map(t=>t.folder))].sort((a,b)=>a.localeCompare(b));
+  const folders=orderFolders([...new Set(S.tracks.map(t=>t.folder))]);
   $('#count').textContent=folders.length?folders.length+' dossier'+(folders.length>1?'s':''):'';
   const G={};S.tracks.forEach(t=>(G[t.folder]=G[t.folder]||[]).push(t));
   folders.forEach(f=>{
@@ -478,7 +502,13 @@ function renderTiles(){
     const n=document.createElement('b');n.textContent=f;
     const c=document.createElement('span');c.textContent=all.length+' piste'+(all.length>1?'s':'');
     lb.append(n,c);b.append(mos,lb);
+    if(S.ro){
+      const g=document.createElement('div');g.className='grip';g.textContent='≡';g.onpointerdown=ev=>dragStart(ev,b);
+      const u=document.createElement('div');u.className='top1';u.textContent='↑';u.onclick=ev=>{ev.stopPropagation();moveFirst(f)};
+      b.append(g,u);
+    }
     b.onclick=()=>{
+      if(S.ro)return;
       if(S.cur&&S.cur.folder===f&&S.folder===f){setTab(false,1);$('#main').scrollTo(0,0);return}
       S.clr=false;S.shown=0;S.folder=f;S.q='';$('#q').value='';S.hist=[];S.shuf=null;
       const l=view().filter(x=>x.file);if(!l.length){needLink();return}
@@ -488,7 +518,7 @@ function renderTiles(){
     box.appendChild(b);
   });
 }
-function setTab(v,dir){S.shown=0;document.body.classList.toggle('tv',v);$('#tL').classList.toggle('on',!v);$('#tD').classList.toggle('on',v);render();
+function setTab(v,dir){if(!v&&S.ro){S.ro=false;document.body.classList.remove('ro');$('#reorder').textContent='Réorganiser'}S.shown=0;document.body.classList.toggle('tv',v);$('#tL').classList.toggle('on',!v);$('#tD').classList.toggle('on',v);render();
   if(dir){const els=v?[$('#tiles')]:[$('#list'),$('#chips')];
     els.forEach(el=>el.animate&&el.animate([{transform:'translateX('+(dir*30)+'%)',opacity:0},{transform:'none',opacity:1}],{duration:300,easing:'cubic-bezier(.22,.8,.24,1)'}))}}
 $('#tL').onclick=()=>{if(document.body.classList.contains('tv'))setTab(false,1)};
@@ -576,10 +606,10 @@ $('#fClose').onclick=()=>closeFull(false);
   const full=$('#full'),open=el=>el.classList.contains('open');
   document.addEventListener('touchstart',e=>{
     const p=e.touches[0];x0=p.clientX;y0=p.clientY;
-    ok=e.touches.length===1&&!e.target.closest('input,select,textarea,.chips');
+    ok=e.touches.length===1&&!e.target.closest('input,select,textarea,.chips,.grip,.top1');
   },{passive:true});
   document.addEventListener('touchend',e=>{
-    if(!ok||!e.changedTouches.length)return;ok=false;
+    if(S.dragging||!ok||!e.changedTouches.length)return;ok=false;
     const p=e.changedTouches[0],dx=p.clientX-x0,dy=p.clientY-y0;
     if(dy>90&&dy>Math.abs(dx)*1.5&&open(full)&&!open($('#qp'))&&!open($('#sheet'))&&!open(setEl)){closeFull(false);return}
     if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*2)return;
@@ -832,6 +862,70 @@ $('#fPlays').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)impor
   f.addEventListener('touchstart',e=>{sy=e.touches[0].clientY},{passive:true});
   f.addEventListener('touchmove',e=>{if(e.target.closest('input'))return;if(Math.abs(e.touches[0].clientY-sy)>12)e.preventDefault()},{passive:false});
 })();
+/* Pas de menu contextuel ni de sélection au toucher long */
+document.addEventListener('contextmenu',e=>e.preventDefault());
+/* Ordre manuel des dossiers (mémorisé) */
+function getOrder(){try{return JSON.parse(localStorage.getItem('anubis.order')||'[]')||[]}catch(e){return[]}}
+function orderFolders(a){const o=getOrder(),ix=f=>{const i=o.indexOf(f);return i<0?1e9:i};return a.sort((x,y)=>ix(x)-ix(y)||x.localeCompare(y))}
+function saveOrder(n){try{localStorage.setItem('anubis.order',JSON.stringify(n))}catch(e){}}
+function moveFirst(f){const names=[...$('#tiles').children].map(b=>b._f).filter(x=>x!==f);names.unshift(f);saveOrder(names);renderTiles();$('#main').scrollTo({top:0,behavior:'smooth'})}
+let drag=null;
+function dragStart(e,tile){
+  e.preventDefault();
+  const g=e.currentTarget;try{g.setPointerCapture(e.pointerId)}catch(_){}
+  S.dragging=true;
+  drag={tile,r0:tile.getBoundingClientRect(),x0:e.clientX,y0:e.clientY,x:e.clientX,y:e.clientY,raf:0};
+  tile.classList.add('drag');
+  g.onpointermove=ev=>{if(!drag)return;drag.x=ev.clientX;drag.y=ev.clientY;dragPlace()};
+  g.onpointerup=g.onpointercancel=()=>dragEnd();
+  const loop=()=>{
+    if(!drag)return;
+    const m=$('#main');
+    if(drag.y<120)m.scrollTop-=14;else if(drag.y>innerHeight-120)m.scrollTop+=14;
+    dragPlace();drag.raf=requestAnimationFrame(loop);
+  };
+  drag.raf=requestAnimationFrame(loop);
+}
+function dragPlace(){
+  const d=drag;if(!d)return;
+  const tile=d.tile;
+  tile.style.pointerEvents='none';
+  const under=document.elementFromPoint(d.x,d.y);
+  tile.style.pointerEvents='';
+  const t=under&&under.closest?under.closest('.tile'):null;
+  if(t&&t!==tile&&t.parentNode===tile.parentNode){
+    const r=t.getBoundingClientRect();
+    if(Math.abs(d.x-(r.left+r.width/2))<r.width*.3&&Math.abs(d.y-(r.top+r.height/2))<r.height*.3){
+      const kids=[...tile.parentNode.children];
+      if(kids.indexOf(tile)<kids.indexOf(t))t.after(tile);else t.before(tile);
+    }
+  }
+  tile.style.transform='none';
+  const r1=tile.getBoundingClientRect();
+  const tx=d.r0.left+(d.x-d.x0)-r1.left,ty=d.r0.top+(d.y-d.y0)-r1.top;
+  tile.style.transform='translate('+tx+'px,'+ty+'px) scale(1.05)';
+}
+function dragEnd(){
+  const d=drag;if(!d)return;drag=null;cancelAnimationFrame(d.raf);
+  d.tile.classList.remove('drag');d.tile.style.transform='';
+  saveOrder([...$('#tiles').children].map(b=>b._f));
+  setTimeout(()=>{S.dragging=false},80);
+}
+$('#reorder').onclick=()=>{S.ro=!S.ro;document.body.classList.toggle('ro',S.ro);$('#reorder').textContent=S.ro?'Terminé':'Réorganiser';renderTiles()};
+let pruneT;
+$('#setPrune').onclick=e=>{
+  const b=e.currentTarget,lbl=b.querySelector('b'),orig='Retirer les pistes introuvables';
+  const gone=S.tracks.filter(t=>!t.file);
+  if(!gone.length){toast('Aucune piste introuvable');return}
+  if(!b.dataset.arm){
+    b.dataset.arm='1';lbl.textContent='Confirmer : retirer '+gone.length+' piste'+(gone.length>1?'s':'')+' ?';
+    clearTimeout(pruneT);pruneT=setTimeout(()=>{delete b.dataset.arm;lbl.textContent=orig},4000);return;
+  }
+  clearTimeout(pruneT);delete b.dataset.arm;lbl.textContent=orig;
+  gone.forEach(t=>tx('readwrite',s=>s.delete(t.key),'meta'));
+  S.tracks=S.tracks.filter(t=>t.file);S.shown=0;render();
+  toast(gone.length+' piste'+(gone.length>1?'s':'')+' retirée'+(gone.length>1?'s':''));
+};
 let wipeT;
 $('#setWipe').onclick=e=>{
   const b=e.currentTarget,lbl=b.querySelector('b'),orig='Vider le cache de l’application';
@@ -887,7 +981,7 @@ $('#clearAll').onclick=e=>{
       for(const t of mig){
         try{if(t.artBlob&&t.artv!==2)await setArt(t,t.artBlob)}catch(e){}
         const r=await save(t);if(r===null)ok=false;
-        if(++n%25===0){ld.querySelector('span').textContent=mig.length-n;render()}
+        if(++n%25===0){ld.querySelector('span').textContent=mig.length-n;ld.dataset.len=String(mig.length-n).length;render()}
         await new Promise(r=>setTimeout(r,0));
       }
       if(ok)await tx('readwrite',s=>s.clear());
