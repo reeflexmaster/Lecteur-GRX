@@ -220,7 +220,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 
 <div id="main">
 <header>
-  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.15</span></div><div class="rt"><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier"><span class="pl">＋</span><span class="ld" id="ld" hidden><i></i><span></span></span></button></div></div>
+  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.14</span></div><div class="rt"><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier"><span class="pl">＋</span><span class="ld" id="ld" hidden><i></i><span></span></span></button></div></div>
   <div class="tools">
     <input id="q" type="search" placeholder="Rechercher…">
     <select id="sort">
@@ -275,10 +275,6 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
   <div class="sbody">
     <div class="sgrp"><div class="shd">Fichiers</div>
       <button class="srow" id="setLink"><b>Relier mes fichiers</b><span>Comme au démarrage : choisis ton dossier dans Fichiers pour rendre la musique lisible.</span></button>
-    </div>
-    <div class="sgrp"><div class="shd">Lecture</div>
-      <button class="srow" id="setRes"><b></b><span>Relance la musique toute seule après un appel, Siri ou une dictée (15 minutes maximum). Pas de reprise si tu as mis en pause toi-même.</span></button>
-      <div class="sinfo" id="setResLast" style="margin-top:10px"></div>
     </div>
     <div class="sgrp"><div class="shd">Compteurs de lecture</div>
       <button class="srow" id="setExp"><b>Exporter les compteurs</b><span>Crée un fichier à enregistrer dans Fichiers (ou à partager).</span></button>
@@ -553,7 +549,7 @@ function play(t){
   if(!t.file){toast('Musique non reliée : touche ＋ pour choisir ton dossier');return}
   const o=S.cur;if(o&&o!==t&&o.artBig){URL.revokeObjectURL(o.artBig);o.artBig=''}
   const prev=S.url;
-  S.url=URL.createObjectURL(t.file);S.cur=t;S.userPaused=false;S.adv=null;S.lis=0;S.counted=false;S.lastT=null;S.starting=true;S.intr=null;clearTimeout(S.rt);
+  S.url=URL.createObjectURL(t.file);S.cur=t;S.userPaused=false;S.adv=null;S.lis=0;S.counted=false;S.lastT=null;S.starting=true;
   au.src=S.url;startPlay(t);msHandlers();
   if(prev)setTimeout(()=>URL.revokeObjectURL(prev),5000);
   clearTimeout(S.wd);
@@ -584,7 +580,7 @@ function next(auto){
   const a=autoList();
   if(a.length){if(S.cur)S.hist.push(S.cur);return play(a[0])}
   const l=view().filter(x=>x.file);if(!l.length)return;
-  if(auto&&S.repeat===0){S.userPaused=true;au.pause();return}
+  if(auto&&S.repeat===0){au.pause();return}
   S.shuf=null;S.clr=false;play(S.shuffle?l[rnd(l.length)]:l[0]);
 }
 function prev(){
@@ -592,7 +588,7 @@ function prev(){
   if(S.hist.length)return play(S.hist.pop());
   const l=view().filter(x=>x.file),i=l.indexOf(S.cur);if(l.length)play(l[(i-1+l.length)%l.length]);
 }
-function toggle(){if(!S.cur){const l=view().filter(x=>x.file);if(l.length)play(S.shuffle?l[rnd(l.length)]:l[0]);else needLink();return}if(au.paused){S.userPaused=false;S.intr=null;startPlay(S.cur)}else{S.userPaused=true;au.pause()}}
+function toggle(){if(!S.cur){const l=view().filter(x=>x.file);if(l.length)play(S.shuffle?l[rnd(l.length)]:l[0]);else needLink();return}if(au.paused){S.userPaused=false;startPlay(S.cur)}else{S.userPaused=true;au.pause()}}
 
 $('#bDir').onclick=()=>$('#fDir').click();
 $('#linkGo').onclick=()=>$('#fDir').click();
@@ -656,9 +652,8 @@ au.ontimeupdate=()=>{
   if(!S.drag&&au.duration){const p=au.currentTime/au.duration*100;$('#tc').textContent=fmt(au.currentTime);sk.value=p*10;setP(p)}
 };
 au.onplay=()=>{ico($('#bPlay'),'pause');ico($('#mPlay'),'pause');if('mediaSession'in navigator)navigator.mediaSession.playbackState='playing'};
-au.onpause=()=>{ico($('#bPlay'),'play');ico($('#mPlay'),'play');if('mediaSession'in navigator)navigator.mediaSession.playbackState='paused';onSysPause()};
-au.onplaying=()=>{S.starting=false;S.errN=0;clearTimeout(S.wd);
-  if(S.intr){clearTimeout(S.okT);S.okT=setTimeout(()=>{if(S.intr&&!au.paused){const s=Math.round((Date.now()-S.intr.t)/1000);S.resLast='Reprise réussie à '+hhmm()+' (après '+(s<90?s+' s':Math.round(s/60)+' min')+')';saveRes();S.intr=null}},2500)}};
+au.onpause=()=>{ico($('#bPlay'),'play');ico($('#mPlay'),'play');if('mediaSession'in navigator)navigator.mediaSession.playbackState='paused'};
+au.onplaying=()=>{S.starting=false;S.errN=0;clearTimeout(S.wd)};
 au.onerror=()=>{
   const t=S.cur;if(!t||S.userPaused)return;
   S.errN=(S.errN||0)+1;
@@ -669,7 +664,6 @@ function hasNext(){return S.queue.length>0||S.repeat!==0||autoList().length>0}
 function recover(){
   const t=S.cur;if(!t||S.userPaused)return;
   if(au.ended&&S.adv!==t){S.adv=t;next(true);return}
-  if(S.intr&&au.paused&&!au.ended){tryResume();return}
   if(au.paused&&!au.ended&&au.currentTime<0.5)startPlay(t);
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)recover()});
@@ -718,7 +712,7 @@ $('#qClear').onclick=()=>{S.queue=[];S.pn=0;S.shuf=null;S.clr=true;refQ();toast(
 function msHandlers(){
   if(!('mediaSession'in navigator))return;
   const m=navigator.mediaSession,set=(a,f)=>{try{m.setActionHandler(a,f)}catch(e){}};
-  set('play',()=>{S.userPaused=false;S.intr=null;if(S.cur)startPlay(S.cur);else au.play()});
+  set('play',()=>{S.userPaused=false;if(S.cur)startPlay(S.cur);else au.play()});
   set('pause',()=>{S.userPaused=true;au.pause()});
   set('nexttrack',()=>next(false));
   set('previoustrack',prev);
@@ -737,7 +731,7 @@ au.addEventListener('webkitcurrentplaybacktargetiswirelesschanged',()=>{
     toast('Diffusion AirPlay / Bluetooth activée');
     if(S.airLost){S.airLost=false;airBar(false);if(S.cur&&!S.userPaused)startPlay(S.cur)}
   }else{
-    const was=S.wasWireless;S.wasWireless=false;if(was){S.intr=null;clearTimeout(S.rt)}
+    const was=S.wasWireless;S.wasWireless=false;
     toast('Lecture sur cet appareil');
     /* coupure AirPlay : la musique s'est mise en pause toute seule → bandeau pour reconnecter en 1 appui */
     if(was&&S.cur&&!S.userPaused)setTimeout(()=>{
@@ -801,7 +795,7 @@ function diag(){
   const vv=window.visualViewport;
   $('#setDiag').textContent='Fenêtre '+innerWidth+'×'+innerHeight+(vv?' · visuelle '+Math.round(vv.width)+'×'+Math.round(vv.height):'')+' · écran '+screen.width+'×'+screen.height+' · zones sûres '+st+' / '+sb+' · app '+document.body.offsetHeight+(navigator.standalone?' · mode app':' · mode navigateur');
 }
-function openSettings(){$('#setVer').textContent='Anubis · '+$('.ver').textContent;updUse();fixH();updRes();diag();setEl.classList.add('open')}
+function openSettings(){$('#setVer').textContent='Anubis · '+$('.ver').textContent;updUse();fixH();diag();setEl.classList.add('open')}
 function closeSettings(){setEl.classList.remove('open')}
 $('#bSet').onclick=openSettings;
 $('#setBack').onclick=closeSettings;
@@ -932,34 +926,6 @@ $('#setPrune').onclick=e=>{
   S.tracks=S.tracks.filter(t=>t.file);S.shown=0;render();
   toast(gone.length+' piste'+(gone.length>1?'s':'')+' retirée'+(gone.length>1?'s':''));
 };
-/* Reprise automatique après une interruption (appel, Siri, dictée...) */
-S.autoRes=true;S.resMax=15*60*1000;S.lastDev=0;S.resLast='';
-try{S.autoRes=localStorage.getItem('anubis.autoRes')!=='0';S.resLast=localStorage.getItem('anubis.resLast')||''}catch(e){}
-function hhmm(){return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}
-function saveRes(){try{localStorage.setItem('anubis.resLast',S.resLast)}catch(e){}}
-const backoff=n=>Math.min(1000+n*1000,8000);
-function scheduleResume(ms){clearTimeout(S.rt);S.rt=setTimeout(tryResume,ms)}
-function onSysPause(){
-  if(!S.cur||S.userPaused||au.ended||S.starting||!S.autoRes)return;
-  clearTimeout(S.okT);
-  if(S.intr){S.intr.n++;scheduleResume(backoff(S.intr.n));return}
-  if(Date.now()-S.lastDev<1500)return;
-  S.intr={t:Date.now(),n:0};
-  S.resLast='Interruption détectée à '+hhmm();saveRes();
-  scheduleResume(1200);
-}
-function tryResume(){
-  const it=S.intr;if(!it)return;
-  if(!S.cur||S.userPaused||!S.autoRes){S.intr=null;return}
-  if(!au.paused||au.ended)return;
-  if(Date.now()-it.t>S.resMax){S.intr=null;S.resLast='Reprise abandonnée à '+hhmm()+' (interruption trop longue)';saveRes();return}
-  if(S.wasWireless&&!au.webkitCurrentPlaybackTargetIsWireless){S.intr=null;S.resLast='Pas de reprise : sortie audio perdue';saveRes();return}
-  const p=au.play();
-  if(p&&p.catch)p.catch(()=>{it.n++;scheduleResume(backoff(it.n))});
-}
-if(navigator.mediaDevices&&navigator.mediaDevices.addEventListener)navigator.mediaDevices.addEventListener('devicechange',()=>{S.lastDev=Date.now();if(S.intr&&Date.now()-S.intr.t<2500){S.intr=null;clearTimeout(S.rt)}});
-function updRes(){$('#setRes b').textContent='Reprise après interruption : '+(S.autoRes?'activée':'désactivée');$('#setResLast').textContent=S.resLast?'Dernière interruption : '+S.resLast:''}
-$('#setRes').onclick=()=>{S.autoRes=!S.autoRes;try{localStorage.setItem('anubis.autoRes',S.autoRes?'1':'0')}catch(e){}if(!S.autoRes){S.intr=null;clearTimeout(S.rt)}updRes()};
 let wipeT;
 $('#setWipe').onclick=e=>{
   const b=e.currentTarget,lbl=b.querySelector('b'),orig='Vider le cache de l’application';
