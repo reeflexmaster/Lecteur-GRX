@@ -204,7 +204,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 
 <div id="main">
 <header>
-  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.11</span></div><div class="rt"><div class="ld" id="ld" hidden><i></i><span></span></div><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier">＋</button></div></div>
+  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.12</span></div><div class="rt"><div class="ld" id="ld" hidden><i></i><span></span></div><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier">＋</button></div></div>
   <div class="tools">
     <input id="q" type="search" placeholder="Rechercher…">
     <select id="sort">
@@ -338,8 +338,21 @@ const info=t=>[(t.ext||(t.file?t.file.name.split('.').pop():'')).toUpperCase(),t
 
 function pcSet(e,t){const n=t.plays||0;e.textContent='▶ '+n;e.classList.toggle('z',!n)}
 function updPlays(t){if(S.cur===t){pcSet($('#fPc'),t);$('#fPc').hidden=!t.plays}for(const li of $('#list').children)if(li._t===t){const pc=li.querySelector('.pc');if(pc)pcSet(pc,t);break}}
+let linkArmed=false;
+/* iOS interdit d'ouvrir le choix du dossier sans geste : le premier toucher de l'écran l'ouvre donc automatiquement */
+function armLink(){
+  if(linkArmed)return;linkArmed=true;updLink();
+  const h=e=>{
+    if(e.target.closest&&e.target.closest('#settings'))return;
+    linkArmed=false;document.removeEventListener('click',h,true);updLink();
+    if(!S.tracks.some(t=>!t.file))return;
+    e.preventDefault();e.stopPropagation();
+    $('#fDir').click();
+  };
+  document.addEventListener('click',h,true);
+}
 function needLink(){toast('Choisis ton dossier pour relier la musique');$('#fDir').click()}
-function updLink(){const n=S.tracks.reduce((a,t)=>a+(t.file?0:1),0),b=$('#linkBar');b.hidden=!n;if(n)b.querySelector('span').textContent=n+' piste'+(n>1?'s':'')+' à relier'}
+function updLink(){const n=S.tracks.reduce((a,t)=>a+(t.file?0:1),0),b=$('#linkBar');b.hidden=!n;if(n)b.querySelector('span').textContent=n+' piste'+(n>1?'s':'')+' à relier'+(linkArmed?' · touche l’écran':'')}
 function addFiles(files){
   const keys=new Set(S.tracks.map(t=>t.key)), fresh=[];
   const byKey=new Map(),orph=new Map();let linked=0;
@@ -469,7 +482,7 @@ function renderTiles(){
       if(S.cur&&S.cur.folder===f&&S.folder===f){setTab(false,1);$('#main').scrollTo(0,0);return}
       S.clr=false;S.shown=0;S.folder=f;S.q='';$('#q').value='';S.hist=[];S.shuf=null;
       const l=view().filter(x=>x.file);if(!l.length){needLink();return}
-      play(S.shuffle?l[Math.floor(Math.random()*l.length)]:l[0]);
+      play(S.shuffle?l[rnd(l.length)]:l[0]);
       openFull(false);
     };
     box.appendChild(b);
@@ -513,13 +526,19 @@ function play(t){
   S.wd=setTimeout(()=>{S.starting=false;if(S.cur===t&&!S.userPaused&&au.paused&&!au.ended){au.load();startPlay(t,1)}},3500);
   ui();markCur();refQ();
 }
-function shuffled(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+/* Hasard : tirage non biaisé (crypto) + pas de répétition d'une piste jouée récemment */
+const rnd=n=>{try{const a=new Uint32Array(1),lim=4294967296-(4294967296%n);let x;do{crypto.getRandomValues(a);x=a[0]}while(x>=lim);return x%n}catch(e){return Math.floor(Math.random()*n)}};
+function shuffled(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
 function autoList(){
   if(S.clr)return[];
   const l=view().filter(x=>x.file);
   if(S.shuffle){
     if(S.shuf)S.shuf=S.shuf.filter(x=>x!==S.cur&&l.includes(x));
-    if(!S.shuf||!S.shuf.length)S.shuf=shuffled(l.filter(x=>x!==S.cur));
+    if(!S.shuf||!S.shuf.length){
+      S.shuf=shuffled(l.filter(x=>x!==S.cur));
+      const rec=new Set(S.hist.slice(-Math.min(5,Math.max(0,l.length-2))));
+      if(rec.size){const k=S.shuf.findIndex(x=>!rec.has(x));if(k>0){const t0=S.shuf[0];S.shuf[0]=S.shuf[k];S.shuf[k]=t0}}
+    }
     return S.shuf;
   }
   return l.slice(l.indexOf(S.cur)+1);
@@ -532,14 +551,14 @@ function next(auto){
   if(a.length){if(S.cur)S.hist.push(S.cur);return play(a[0])}
   const l=view().filter(x=>x.file);if(!l.length)return;
   if(auto&&S.repeat===0){au.pause();return}
-  S.shuf=null;S.clr=false;play(l[0]);
+  S.shuf=null;S.clr=false;play(S.shuffle?l[rnd(l.length)]:l[0]);
 }
 function prev(){
   if(au.currentTime>3||!S.cur){au.currentTime=0;return}
   if(S.hist.length)return play(S.hist.pop());
   const l=view().filter(x=>x.file),i=l.indexOf(S.cur);if(l.length)play(l[(i-1+l.length)%l.length]);
 }
-function toggle(){if(!S.cur){const l=view().filter(x=>x.file);if(l.length)play(l[0]);else needLink();return}if(au.paused){S.userPaused=false;startPlay(S.cur)}else{S.userPaused=true;au.pause()}}
+function toggle(){if(!S.cur){const l=view().filter(x=>x.file);if(l.length)play(S.shuffle?l[rnd(l.length)]:l[0]);else needLink();return}if(au.paused){S.userPaused=false;startPlay(S.cur)}else{S.userPaused=true;au.pause()}}
 
 $('#bDir').onclick=()=>$('#fDir').click();
 $('#linkGo').onclick=()=>$('#fDir').click();
@@ -876,6 +895,7 @@ $('#clearAll').onclick=e=>{
       if(ok)toast('Copies audio supprimées : relie ton dossier pour écouter');
     }
   }
+  if(S.tracks.some(t=>!t.file))armLink();
 })();
 render();
 </script>
