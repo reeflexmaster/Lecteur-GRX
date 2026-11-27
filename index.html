@@ -171,6 +171,9 @@ body.pv #plv{display:block}
 .qa svg{width:14px;height:14px}
 .qa span{max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .qa.on{border-color:var(--g);color:var(--g)}
+#plEdit{display:none;color:var(--c)}
+body.pv #plEdit,body.ple #plEdit{display:inline-block}
+body.tv #plEdit{display:none}
 /* mini player */
 #mini{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));background:#04090c;border:1.5px solid var(--c);border-radius:20px;padding:8px 10px;display:flex;align-items:center;gap:10px;box-shadow:0 0 16px rgba(0,240,255,.5),inset 0 0 14px rgba(0,240,255,.12);z-index:5;overflow:hidden}
 #mini .cv{width:46px;height:46px;border-radius:12px}
@@ -246,7 +249,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 
 <div id="main">
 <header>
-  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.17</span></div><div class="rt"><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier"><span class="pl">＋</span><span class="ld" id="ld" hidden><i></i><span></span></span></button></div></div>
+  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.18</span></div><div class="rt"><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier"><span class="pl">＋</span><span class="ld" id="ld" hidden><i></i><span></span></span></button></div></div>
   <div class="tools">
     <input id="q" type="search" placeholder="Rechercher…">
     <select id="sort">
@@ -260,7 +263,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 <div id="linkBar" hidden><span></span><button id="linkGo">Relier mon dossier</button></div>
 <div class="tabs"><button class="tab on" id="tD">Dossiers</button><button class="tab" id="tL">Pistes</button><button class="tab" id="tP">Playlists</button></div>
 <div class="chips" id="chips"></div>
-<div class="count"><span id="count"></span><button class="lnk" id="reorder">Réorganiser</button><button class="lnk" id="clearAll">Vider la bibliothèque</button></div>
+<div class="count"><span id="count"></span><button class="lnk" id="reorder">Réorganiser</button><button class="lnk" id="plEdit">Éditer</button><button class="lnk" id="clearAll">Vider la bibliothèque</button></div>
 <ul id="list"></ul>
 <div id="tiles"></div>
 <div id="plv"></div>
@@ -480,7 +483,8 @@ function render(){
     li.querySelector('span').textContent=sub(t)+' · '+DF.format(t.mtime);
     const pc=document.createElement('div');pc.className='pc';pcSet(pc,t);li.appendChild(pc);
     const lp=PL.find(x=>x.id===S.lastPl);
-    if(lp){
+    if(!S.ple&&t.kbps){const br=document.createElement('div');br.className='br';br.textContent=t.kbps+' kbps';li.appendChild(br)}
+    if(S.ple&&lp){
       const on=lp.keys.includes(t.key),qa=document.createElement('button');
       qa.className='qa'+(on?' on':'');qa.setAttribute('aria-label',(on?'Retirer de ':'Ajouter à ')+lp.name);
       qa.innerHTML='<svg><use href="#i-plus"/></svg><span></span>';qa.querySelector('span').textContent=(on?'✓ ':'')+lp.name;
@@ -994,7 +998,7 @@ function showPlaylists(dir){
 function playPl(p,t0,show){
   const all=plTracks(p).filter(x=>x.file);
   if(!all.length){needLink();return}
-  S.plq=all;S.clr=false;S.hist=[];S.shuf=null;
+  S.plq=all;S.plId=p.id;S.clr=false;S.hist=[];S.shuf=null;
   play(t0&&t0.file?t0:(S.shuffle?all[rnd(all.length)]:all[0]));
   if(show)openFull(false);
 }
@@ -1007,6 +1011,7 @@ function mkBtn(cls,txt,fn){const b=document.createElement('button');b.className=
 function renderPlaylists(){
   if(!document.body.classList.contains('pv'))return;
   const box=$('#plv');box.innerHTML='';
+  if(!S.ple)S.plOpen=null;
   const p=S.plOpen?PL.find(x=>x.id===S.plOpen):null;if(!p)S.plOpen=null;
   if(!p){
     $('#count').textContent=PL.length+' playlist'+(PL.length>1?'s':'');
@@ -1014,14 +1019,18 @@ function renderPlaylists(){
     const inp=document.createElement('input');inp.placeholder='Nouvelle playlist…';inp.maxLength=40;
     const go=()=>{const n=inp.value.trim();if(!n){inp.focus();return}S.plOpen=newPl(n).id;renderPlaylists()};
     inp.onkeydown=e=>{if(e.key==='Enter')go()};
-    row.append(inp,mkBtn('nb m','Créer',go));box.appendChild(row);
-    if(!PL.length){const e=document.createElement('div');e.className='pempty';e.textContent='Aucune playlist. Crée-en une, puis ajoute des pistes avec le bouton + de l’onglet Pistes.';box.appendChild(e)}
+    if(S.ple){row.append(inp,mkBtn('nb m','Créer',go));box.appendChild(row)}
+    if(!PL.length){const e=document.createElement('div');e.className='pempty';e.textContent=S.ple?'Aucune playlist. Crée-en une ci-dessus, puis ajoute des pistes depuis l’onglet Pistes.':'Aucune playlist. Touche « Éditer » pour en créer une.';box.appendChild(e)}
     PL.forEach(q=>{
       const ts=plTracks(q),b=document.createElement('button');b.className='pcard';
       const info=document.createElement('div');info.className='pin';
       info.innerHTML='<b>'+esc(q.name)+'</b><span>'+ts.length+' piste'+(ts.length>1?'s':'')+'</span>';
       b.append(mosaic(ts),info);
-      b.onclick=()=>{S.plOpen=q.id;renderPlaylists();$('#main').scrollTo(0,0)};
+      b.onclick=()=>{
+        if(S.ple){S.plOpen=q.id;renderPlaylists();$('#main').scrollTo(0,0);return}
+        if(S.plq&&S.plId===q.id&&S.cur){openFull(false);return}
+        playPl(q,null,true);
+      };
       box.appendChild(b);
     });
     return;
@@ -1056,7 +1065,7 @@ function renderPlaylists(){
     li.appendChild(rm);
     li.onclick=()=>{
       if(!t.file){needLink();return}
-      if(t===S.cur&&!au.ended){S.plq=plTracks(p).filter(x=>x.file);S.shuf=null;openFull(false);return}
+      if(t===S.cur&&!au.ended){S.plq=plTracks(p).filter(x=>x.file);S.plId=p.id;S.shuf=null;openFull(false);return}
       playPl(p,t,false);
     };
     ul.appendChild(li);
@@ -1079,6 +1088,10 @@ function renderPick(){
   });
 }
 $('#shPl').onclick=()=>{$('#shBox').classList.add('pick');$('#shCancel').textContent='Terminé';renderPick()};
+/* Mode édition des playlists */
+S.ple=false;
+function setPle(v){S.ple=v;document.body.classList.toggle('ple',v);$('#plEdit').textContent=v?'Terminé':'Éditer';if(!v)S.plOpen=null;render()}
+$('#plEdit').onclick=()=>setPle(!S.ple);
 let wipeT;
 $('#setWipe').onclick=e=>{
   const b=e.currentTarget,lbl=b.querySelector('b'),orig='Vider le cache de l’application';
