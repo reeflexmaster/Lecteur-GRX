@@ -192,6 +192,17 @@ body.pv .sct{display:none}
 #toTop{position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);left:50%;margin-left:-23px;width:46px;height:46px;border-radius:50%;border:1.5px solid var(--c);background:rgba(0,0,0,.55);color:var(--c);display:grid;place-items:center;padding:0;z-index:9;opacity:0;transform:translateY(-12px);pointer-events:none;transition:opacity .25s,transform .25s}
 #toTop.show{opacity:.85;transform:none;pointer-events:auto}
 #toTop svg{width:22px;height:22px}
+#shPlayF{display:none}
+.box.fol #shPlayF{display:block}
+.box.fol #shNext,.box.fol #shEnd,.box.fol #shDel{display:none}
+#selMode,#selAll{display:none;color:var(--c)}
+body:not(.tv):not(.pv) #selMode{display:inline-block}
+body.sm:not(.tv):not(.pv) #selAll{display:inline-block}
+body:not(.tv):not(.pv) #clearAll{display:none}
+.ck{flex:none;width:24px;height:24px;border-radius:50%;border:2px solid #3a5663;display:grid;place-items:center;font-style:normal;color:#000;font-size:14px;font-weight:900}
+.ck.on{background:var(--g);border-color:var(--g)}
+.ck.on::after{content:"\2713"}
+li.sel{background:rgba(167,255,0,.08)}
 /* mini player */
 #mini{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));background:#04090c;border:1.5px solid var(--c);border-radius:20px;padding:8px 10px;display:flex;align-items:center;gap:10px;box-shadow:0 0 16px rgba(0,240,255,.5),inset 0 0 14px rgba(0,240,255,.12);z-index:5;overflow:hidden}
 #mini .cv{width:46px;height:46px;border-radius:12px}
@@ -270,13 +281,13 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 
 <div id="main">
 <header>
-  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.22</span></div><div class="rt"><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier"><span class="pl">＋</span><span class="ld" id="ld" hidden><i></i><span></span></span></button></div></div>
+  <div class="brand"><div class="logo"></div><div class="ttl"><h1>Anubis</h1><span class="ver">V1.23</span></div><div class="rt"><button class="ib t" id="bSet" aria-label="Réglages"><svg><use href="#i-gear"/></svg></button><button class="nb m plus" id="bDir" aria-label="Ajouter un dossier"><span class="pl">＋</span><span class="ld" id="ld" hidden><i></i><span></span></span></button></div></div>
 </header>
 <div id="linkBar" hidden><span></span><button id="linkGo">Relier mon dossier</button></div>
 <div class="tabs"><button class="tab on" id="tD">Dossiers</button><button class="tab" id="tL">Pistes</button><button class="tab" id="tP">Playlists</button></div>
 <div class="chips" id="chips"></div>
 <div id="sbar" hidden><input id="q" type="search" placeholder="Rechercher…"><button class="ic" id="qx" aria-label="Fermer la recherche">×</button></div>
-<div class="count"><span id="count"></span><button class="lnk" id="reorder">Réorganiser</button><button class="lnk" id="plEdit">Éditer</button><span class="sct"><button class="ic" id="bSearch" aria-label="Rechercher"><svg><use href="#i-search"/></svg></button><label class="ic" aria-label="Trier"><svg><use href="#i-sort"/></svg><select id="sort"><option value="new">Plus récents</option><option value="old">Plus anciens</option><option value="az">Titre A → Z</option><option value="za">Titre Z → A</option></select></label></span><button class="lnk" id="clearAll">Vider la bibliothèque</button></div>
+<div class="count"><span id="count"></span><button class="lnk" id="reorder">Réorganiser</button><button class="lnk" id="plEdit">Éditer</button><span class="sct"><button class="ic" id="bSearch" aria-label="Rechercher"><svg><use href="#i-search"/></svg></button><label class="ic" aria-label="Trier"><svg><use href="#i-sort"/></svg><select id="sort"><option value="new">Plus récents</option><option value="old">Plus anciens</option><option value="az">Titre A → Z</option><option value="za">Titre Z → A</option></select></label></span><button class="lnk" id="selAll">Tout</button><button class="lnk" id="selMode">Sélectionner</button><button class="lnk" id="clearAll">Vider la bibliothèque</button></div>
 <ul id="list"></ul>
 <div id="tiles"></div>
 <div id="plv"></div>
@@ -309,8 +320,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
   </div>
 </div>
 
-<div id="qp"><div class="qtop"><button class="ib t" id="qClose"><svg><use href="#i-down"/></svg></button><span>À suivre</span><button class="nb m" id="qClear">Vider</button></div><ul id="qList"></ul></div>
-<div id="sheet"><div class="box" id="shBox"><div class="st" id="shT"></div><button class="nb" id="shNext">Lire juste après</button><button class="nb m" id="shEnd">Ajouter à la file d’attente</button><button class="nb" id="shPl">Ajouter à une playlist…</button><div id="shPls"></div><button class="nb x" id="shDel">Retirer de la bibliothèque</button><button class="nb x" id="shCancel">Annuler</button></div></div>
+<div id="qp"><div class="qtop"><button class="ib t" id="qClose"><svg><use href="#i-down"/></svg></button><span id="qTitle">À suivre</span><button class="nb m" id="qClear">Vider</button></div><ul id="qList"></ul></div>
+<div id="sheet"><div class="box" id="shBox"><div class="st" id="shT"></div><button class="nb m" id="shPlayF">Lire le dossier</button><button class="nb" id="shNext">Lire juste après</button><button class="nb m" id="shEnd">Ajouter à la file d’attente</button><button class="nb" id="shPl">Ajouter à une playlist…</button><div id="shPls"></div><button class="nb x" id="shDel">Retirer de la bibliothèque</button><button class="nb x" id="shCancel">Annuler</button></div></div>
 <div id="toast"></div>
 <input type="file" id="fDir" webkitdirectory multiple hidden>
 <audio id="au" playsinline x-webkit-airplay="allow"></audio>
@@ -320,9 +331,9 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
     <div class="sgrp"><div class="shd">Fichiers</div>
       <button class="srow" id="setLink"><b>Relier mes fichiers</b><span>Comme au démarrage : choisis ton dossier dans Fichiers pour rendre la musique lisible.</span></button>
     </div>
-    <div class="sgrp"><div class="shd">Compteurs de lecture</div>
-      <button class="srow" id="setExp"><b>Exporter les compteurs</b><span>Crée un fichier à enregistrer dans Fichiers (ou à partager).</span></button>
-      <button class="srow" id="setImp" style="margin-top:10px"><b>Importer les compteurs</b><span>Fusionne un fichier exporté : pour chaque piste, le plus grand nombre est conservé. Les pistes pas encore dans la liste reçoivent leur compteur dès que tu les ajoutes.</span></button>
+    <div class="sgrp"><div class="shd">Réglages de l’application</div>
+      <button class="srow" id="setExp"><b>Exporter les réglages</b><span>Crée un fichier avec tes compteurs de lecture, tes playlists, l’ordre des dossiers, le tri et le mode de lecture (aléatoire / répétition).</span></button>
+      <button class="srow" id="setImp" style="margin-top:10px"><b>Importer les réglages</b><span>Restaure un fichier exporté depuis une autre version. Compteurs : le plus grand est conservé. Playlists : fusionnées (celles du fichier remplacent les mêmes). Ordre des dossiers, tri et mode de lecture : remplacés.</span></button>
       <input type="file" id="fPlays" accept=".json,application/json" hidden>
     </div>
     <div class="sgrp"><div class="shd">Bibliothèque</div>
@@ -487,11 +498,12 @@ function render(){
   const l=view();
   $('#empty').style.display=S.tracks.length?'none':'block';$('#clearAll').style.display=S.tracks.length?'':'none';
   $('#count').textContent=S.tracks.length?l.length+' piste'+(l.length>1?'s':''):'';
-  renderTiles();updLink();renderPlaylists();$('#bSearch').classList.toggle('on',!!S.q);
+  renderTiles();updLink();renderPlaylists();$('#bSearch').classList.toggle('on',!!S.q);updSel();
   const ul=$('#list');ul.innerHTML='';
   const mk=t=>{
     const li=document.createElement('li');li._t=t;if(t===S.cur)li.className='cur';if(!t.file)li.classList.add('off');
     li.innerHTML='<div class="cv noart"></div><div class="tt"><b></b><span></span></div>';
+    if(S.sm){const ck=document.createElement('i');ck.className='ck'+(S.sel.has(t)?' on':'');li.prepend(ck);if(S.sel.has(t))li.classList.add('sel')}
     setCv(li.querySelector('.cv'),t);
     li.querySelector('b').textContent=title(t);
     li.querySelector('span').textContent=sub(t)+' · '+DF.format(t.mtime);
@@ -505,8 +517,8 @@ function render(){
       qa.onclick=e=>{e.stopPropagation();quickAdd(t,qa)};
       li.appendChild(qa);
     }
-    const ab=document.createElement('button');ab.className='ib t add';ab.innerHTML='<svg><use href="#i-plus"/></svg>';ab.onclick=e=>{e.stopPropagation();openSheet(t)};li.appendChild(ab);
-    li.onclick=()=>{if(!t.file){needLink();return}if(t===S.cur&&!au.ended){openFull(false);return}S.plq=null;S.clr=false;S.hist=[];S.shuf=null;play(t)};
+    const ab=document.createElement('button');ab.className='ib t add';ab.innerHTML='<svg><use href="#i-plus"/></svg>';ab.onclick=e=>{e.stopPropagation();openSheet(S.sm&&S.sel.size?[...S.sel]:t)};li.appendChild(ab);
+    li.onclick=()=>{if(S.sm){toggleSel(t,li);return}if(!t.file){needLink();return}if(t===S.cur&&!au.ended){openFull(false);return}S.plq=null;S.clr=false;S.hist=[];S.shuf=null;play(t)};
     return li;
   };
   listMore(ul,l,mk);
@@ -560,17 +572,15 @@ function renderTiles(){
       b.append(g,u);
     }
     b.onclick=()=>{
-      if(S.ro)return;
-      if(S.cur&&S.cur.folder===f&&S.folder===f){setTab(false,1);$('#main').scrollTo(0,0);return}
-      S.plq=null;S.clr=false;S.shown=0;S.folder=f;S.q='';$('#q').value='';S.hist=[];S.shuf=null;
-      const l=view().filter(x=>x.file);if(!l.length){needLink();return}
-      play(S.shuffle?l[rnd(l.length)]:l[0]);
-      openFull(false);
+      if(S.ro||b._lp)return;
+      S.shown=0;S.folder=f;S.q='';$('#q').value='';
+      setTab(false,1);$('#main').scrollTo(0,0);
     };
+    lpBind(b,()=>{if(!S.ro)openFolderSheet(f)});
     box.appendChild(b);
   });
 }
-function setTab(v,dir){document.body.classList.remove('pv');$('#tP').classList.remove('on');S.plOpen=null;if(!v&&S.ro){S.ro=false;document.body.classList.remove('ro');$('#reorder').textContent='Réorganiser'}S.shown=0;document.body.classList.toggle('tv',v);$('#tL').classList.toggle('on',!v);$('#tD').classList.toggle('on',v);render();
+function setTab(v,dir){if(S.sm){S.sm=false;S.sel.clear();document.body.classList.remove('sm');$('#selMode').textContent='Sélectionner'}document.body.classList.remove('pv');$('#tP').classList.remove('on');S.plOpen=null;if(!v&&S.ro){S.ro=false;document.body.classList.remove('ro');$('#reorder').textContent='Réorganiser'}S.shown=0;document.body.classList.toggle('tv',v);$('#tL').classList.toggle('on',!v);$('#tD').classList.toggle('on',v);render();
   if(dir){const els=v?[$('#tiles')]:[$('#list'),$('#chips')];
     els.forEach(el=>el.animate&&el.animate([{transform:'translateX('+(dir*30)+'%)',opacity:0},{transform:'none',opacity:1}],{duration:300,easing:'cubic-bezier(.22,.8,.24,1)'}))}}
 $('#tL').onclick=()=>{const c=curPage();if(c!==1)setTab(false,c===0?1:-1)};
@@ -647,7 +657,7 @@ $('#bDir').onclick=()=>$('#fDir').click();
 $('#linkGo').onclick=()=>$('#fDir').click();
 $('#fDir').onchange=e=>{addFiles(e.target.files);e.target.value=''};
 $('#q').oninput=e=>{S.q=e.target.value.toLowerCase();S.shown=0;render()};
-$('#sort').onchange=e=>{S.sort=e.target.value;S.shown=0;render();toast('Tri : '+e.target.selectedOptions[0].text)};
+$('#sort').onchange=e=>{S.sort=e.target.value;try{localStorage.setItem('anubis.sort',S.sort)}catch(_){}S.shown=0;render();toast('Tri : '+e.target.selectedOptions[0].text)};
 function setSearch(on){
   $('#sbar').hidden=!on;
   if(on)$('#q').focus();
@@ -674,10 +684,12 @@ $('#fClose').onclick=()=>closeFull(false);
     if(dy>90&&dy>Math.abs(dx)*1.5&&open(full)&&!open($('#qp'))&&!open($('#sheet'))&&!open(setEl)){closeFull(false);return}
     if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*2)return;
     if(open(setEl)){if(dx>0)closeSettings();return}
-    if(open($('#qp'))||open($('#sheet')))return;
+    if(open($('#qp'))){if(dx>0)$('#qp').classList.remove('open');return}
+    if(open($('#sheet')))return;
     /* pages : 0 Dossiers · 1 Pistes · 2 Lecture */
     const cur=open(full)?3:curPage();
     const nxt=dx<0?cur+1:cur-1;
+    if(cur===3&&dx<0){renderQ();$('#qp').classList.add('open');return}
     if(nxt<0||nxt>3||(nxt===3&&!S.cur))return;
     if(nxt===3){openFull(true);return}
     if(cur===3)closeFull(true);
@@ -732,13 +744,26 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)hidAt=Date.
 addEventListener('pageshow',recover);
 au.onended=()=>{if(S.adv===S.cur)return;S.adv=S.cur;next(true)};
 function toast(m){const e=$('#toast');e.textContent=m;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),1700)}
-let shT=null;
-function openSheet(t){shT=t;$('#shT').textContent=title(t);$('#shBox').classList.remove('pick');$('#shCancel').textContent='Annuler';$('#sheet').classList.add('open')}
-function closeSheet(){$('#sheet').classList.remove('open');$('#shBox').classList.remove('pick')}
+let shT=null,shTs=[],shF=null,shOpenT=0;
+function openSheet(ts){
+  shTs=Array.isArray(ts)?ts:[ts];shT=shTs[0];shOpenT=Date.now();
+  $('#shT').textContent=shTs.length>1?shTs.length+' pistes sélectionnées':title(shT);
+  $('#shBox').classList.remove('pick','fol');
+  $('#shDel').textContent=shTs.length>1?'Retirer '+shTs.length+' pistes de la bibliothèque':'Retirer de la bibliothèque';
+  $('#shCancel').textContent='Annuler';$('#sheet').classList.add('open');
+}
+function openFolderSheet(f){
+  shF=f;shTs=S.tracks.filter(t=>t.folder===f);shT=shTs[0];shOpenT=Date.now();
+  $('#shT').textContent=f+' · '+shTs.length+' piste'+(shTs.length>1?'s':'');
+  const bx=$('#shBox');bx.classList.remove('pick');bx.classList.add('fol');
+  $('#shCancel').textContent='Annuler';$('#sheet').classList.add('open');
+}
+function closeSheet(){$('#sheet').classList.remove('open');$('#shBox').classList.remove('pick','fol')}
 $('#shBox').onclick=e=>e.stopPropagation();
-$('#sheet').onclick=$('#shCancel').onclick=closeSheet;
-$('#shNext').onclick=()=>{S.queue.splice(S.pn,0,shT);S.pn++;closeSheet();toast('Sera lu juste après');refQ()};
-$('#shEnd').onclick=()=>{S.queue.push(shT);closeSheet();toast('Ajouté à la file d’attente');refQ()};
+$('#shCancel').onclick=closeSheet;
+$('#sheet').onclick=()=>{if(Date.now()-shOpenT<500)return;closeSheet()};
+$('#shNext').onclick=()=>{S.queue.splice(S.pn,0,...shTs);S.pn+=shTs.length;closeSheet();toast('Sera lu juste après');refQ()};
+$('#shEnd').onclick=()=>{S.queue.push(...shTs);closeSheet();toast('Ajouté à la file d’attente');refQ()};
 function qRow(t,o){
   const li=document.createElement('li');
   li.innerHTML='<div class="cv noart"></div><div class="tt"><b></b><span></span></div>';
@@ -759,7 +784,8 @@ function renderQ(){
       go:()=>{S.queue.splice(i,1);if(i<S.pn)S.pn--;if(S.cur)S.hist.push(S.cur);play(t)},
       rm:()=>{S.queue.splice(i,1);if(i<S.pn)S.pn--;refQ()}})));
   }
-  const a=autoList().slice(0,60);
+  const al=autoList(),a=al.slice(0,60),tot=(S.cur?1:0)+S.queue.length+al.length;
+  $('#qTitle').textContent='À suivre · '+tot+' piste'+(tot>1?'s':'');
   if(a.length){hd(S.shuffle?'Ensuite (aléatoire)':'Ensuite');a.forEach(t=>ul.appendChild(qRow(t,{go:()=>{if(S.cur)S.hist.push(S.cur);play(t)}})))}
   if(!S.queue.length&&!a.length){const e=document.createElement('div');e.className='empty';e.textContent='Rien à suivre pour le moment.';ul.appendChild(e)}
 }
@@ -821,7 +847,17 @@ function save(t){
   const meta={key:t.key,name:t.name,folder:t.folder,mtime:t.mtime,size:t.size||0,ext:t.ext||'',title:t.title,artist:t.artist,artBlob:t.artBlob||null,thumbBlob:t.thumbBlob||null,artv:t.artv||0,kbps:t.kbps||0,plays:t.plays||0,tagged:!!t.tagged};
   return tx('readwrite',s=>s.put(meta),'meta').then(r=>{if(r===null&&!save.w){save.w=1;toast('Espace de stockage insuffisant')}return r});
 }
-$('#shDel').onclick=()=>{const t=shT;closeSheet();S.tracks=S.tracks.filter(x=>x!==t);S.queue=S.queue.filter(x=>x!==t);S.pn=Math.min(S.pn,S.queue.length);tx('readwrite',s=>s.delete(t.key));tx('readwrite',s=>s.delete(t.key),'meta');toast('Retiré de la bibliothèque');render();refQ()};
+let delT;
+$('#shDel').onclick=e=>{
+  const b=e.currentTarget,n=shTs.length;
+  if(n>1&&!b.dataset.arm){b.dataset.arm='1';b.textContent='Confirmer : retirer '+n+' pistes ?';clearTimeout(delT);delT=setTimeout(()=>{delete b.dataset.arm;b.textContent='Retirer '+n+' pistes de la bibliothèque'},4000);return}
+  delete b.dataset.arm;
+  const ts=shTs.slice(),set=new Set(ts);closeSheet();
+  S.tracks=S.tracks.filter(x=>!set.has(x));S.queue=S.queue.filter(x=>!set.has(x));S.pn=Math.min(S.pn,S.queue.length);
+  ts.forEach(t=>{tx('readwrite',s=>s.delete(t.key));tx('readwrite',s=>s.delete(t.key),'meta')});
+  S.sel.clear();
+  toast(n>1?n+' pistes retirées':'Retiré de la bibliothèque');render();refQ();
+};
 function wipeLib(){au.pause();S.tracks=[];S.queue=[];S.pn=0;S.cur=null;S.hist=[];tx('readwrite',s=>s.clear());tx('readwrite',s=>s.clear(),'meta');$('#mini').style.display='none';document.body.classList.remove('pl');$('#full').classList.remove('open');render();refQ()};
 au.onloadedmetadata=()=>{const t=S.cur;if(t&&!t.kbps&&au.duration>0){t.kbps=Math.round(t.file.size*8/au.duration/1000);save(t);ui()}};
 /* Animations d'ouverture / fermeture de la page de lecture */
@@ -881,42 +917,72 @@ const getPP=()=>{try{return JSON.parse(localStorage.getItem(PPK)||'{}')||{}}catc
 const setPP=o=>{try{localStorage.setItem(PPK,JSON.stringify(o))}catch(e){}};
 function applyPP(t,pp){
   const e=pp[t.key]||Object.values(pp).find(x=>x.s&&x.s===t.size&&x.n===t.name&&(!x.f||x.f===t.folder));
-  if(e&&e.p>(t.plays||0))t.plays=e.p;
+  if(!e)return;
+  if(e.p>(t.plays||0))t.plays=e.p;
+  if(e.k!==t.key){let ch=false;PL.forEach(p=>{const i=p.keys.indexOf(e.k);if(i>=0){if(p.keys.includes(t.key))p.keys.splice(i,1);else p.keys[i]=t.key;ch=true}});if(ch)plSave()}
 }
-async function exportPlays(){
-  const out=[],seen=new Set();
-  S.tracks.forEach(t=>{if(t.plays>0){seen.add(t.key);out.push({k:t.key,n:t.name,f:t.folder,s:t.size||0,p:t.plays})}});
-  Object.values(getPP()).forEach(e=>{if(!seen.has(e.k))out.push(e)});
-  if(!out.length){toast('Aucun compteur à exporter');return}
-  const json=JSON.stringify({app:'anubis',type:'plays',ver:$('.ver').textContent,date:new Date().toISOString(),tracks:out});
-  const name='anubis-lectures.json';
-  const file=new File([json],name,{type:'application/json'});
+function descr(t){return {k:t.key,n:t.name,f:t.folder,s:t.size||0}}
+function applyMode(sh,rp){S.shuffle=sh;S.repeat=rp;S.shuf=null;$('#bSh').classList.toggle('on',sh);$('#bRep').classList.toggle('on',rp>0);$('#bd').textContent=rp===2?'1':'';saveMode();refQ()}
+async function exportConfig(){
+  const plays=[],seen=new Set(),pp=getPP(),byKey=new Map(S.tracks.map(t=>[t.key,t]));
+  S.tracks.forEach(t=>{if(t.plays>0){seen.add(t.key);plays.push({...descr(t),p:t.plays})}});
+  Object.values(pp).forEach(e=>{if(e.p>0&&!seen.has(e.k))plays.push(e)});
+  const playlists=PL.map(p=>({id:p.id,name:p.name,items:p.keys.map(k=>{const t=byKey.get(k);if(t)return descr(t);const e=pp[k];return e?{k:e.k,n:e.n,f:e.f,s:e.s}:{k}})}));
+  let noH='0';try{noH=localStorage.getItem('anubis.noH')||'0'}catch(e){}
+  const cfg={app:'anubis',type:'config',v:2,ver:$('.ver').textContent,date:new Date().toISOString(),plays,order:getOrder(),mode:{sh:!!S.shuffle,rp:S.repeat||0},sort:S.sort,noH,lastPl:S.lastPl||null,playlists};
+  const name='anubis-reglages.json';
+  const file=new File([JSON.stringify(cfg)],name,{type:'application/json'});
   try{
-    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Compteurs Anubis'});return}
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Réglages Anubis'});return}
   }catch(e){if(e&&e.name==='AbortError')return}
   const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),10000);
-  toast('Compteurs exportés');
+  toast('Réglages exportés');
 }
-async function importPlays(file){
+async function importConfig(file){
   let d;try{d=JSON.parse(await file.text())}catch(e){toast('Fichier illisible');return}
-  const list=d&&d.app==='anubis'&&Array.isArray(d.tracks)?d.tracks:null;
-  if(!list){toast('Ce fichier n’est pas un export Anubis');return}
+  if(!d||d.app!=='anubis'){toast('Ce fichier n’est pas un export Anubis');return}
+  const cfg=d.type==='config',plays=cfg?d.plays:d.tracks;
+  if(!cfg&&!Array.isArray(plays)){toast('Fichier non reconnu');return}
   const byKey=new Map(),byNS=new Map();
   S.tracks.forEach(t=>{byKey.set(t.key,t);if(t.size)byNS.set(t.name+'|'+t.size+'|'+t.folder,t)});
-  const pp=getPP();let ok=0,wait=0;
-  for(const e of list){
-    const p=Math.floor(+e.p);if(!(p>0)||!e.k)continue;
-    const t=byKey.get(e.k)||byNS.get(e.n+'|'+e.s+'|'+e.f);
+  const find=e=>byKey.get(e.k)||(e.s?byNS.get(e.n+'|'+e.s+'|'+e.f):null);
+  const pp=getPP();let ok=0,wait=0,nPl=0;
+  (Array.isArray(plays)?plays:[]).forEach(e=>{
+    const p=Math.floor(+e.p);if(!(p>0)||!e.k)return;
+    const t=find(e);
     if(t){if(p>(t.plays||0)){t.plays=p;save(t)}ok++}
     else{const o=pp[e.k];if(!o||p>o.p)pp[e.k]={k:e.k,n:e.n,f:e.f,s:e.s,p};wait++}
+  });
+  if(cfg){
+    if(Array.isArray(d.order))saveOrder(d.order.filter(x=>typeof x==='string'));
+    if(d.mode)applyMode(!!d.mode.sh,[0,1,2].includes(d.mode.rp)?d.mode.rp:0);
+    if(['new','old','az','za'].includes(d.sort)){S.sort=d.sort;$('#sort').value=d.sort;try{localStorage.setItem('anubis.sort',d.sort)}catch(_){}}
+    if(d.noH==='0'||d.noH==='1'){try{localStorage.setItem('anubis.noH',d.noH)}catch(_){}fixH()}
+    if(Array.isArray(d.playlists)){
+      d.playlists.forEach(ip=>{
+        if(!ip||!ip.id||!ip.name)return;
+        const keys=[];
+        (ip.items||[]).forEach(e=>{
+          if(!e||!e.k)return;
+          const t=find(e),k=t?t.key:e.k;
+          if(!t&&e.n&&!pp[e.k])pp[e.k]={k:e.k,n:e.n,f:e.f,s:e.s,p:0};
+          if(!keys.includes(k))keys.push(k);
+        });
+        const cur=PL.find(x=>x.id===ip.id);
+        if(cur){cur.name=String(ip.name);cur.keys=keys}else PL.push({id:String(ip.id),name:String(ip.name),keys});
+        nPl++;
+      });
+      plSave();
+    }
+    if(d.lastPl&&PL.some(x=>x.id===d.lastPl))setLastPl(d.lastPl);
   }
-  setPP(pp);render();if(S.cur)ui();
-  toast(ok+' compteur'+(ok>1?'s':'')+' importé'+(ok>1?'s':'')+(wait?' · '+wait+' en attente':''));
+  setPP(pp);render();renderPlaylists();if(S.cur)ui();
+  toast(ok+' compteur'+(ok>1?'s':'')+(cfg?' · '+nPl+' playlist'+(nPl>1?'s':'')+' · réglages restaurés':'')+(wait?' · '+wait+' en attente':''));
 }
-$('#setExp').onclick=exportPlays;
+$('#setExp').onclick=exportConfig;
 $('#setImp').onclick=()=>$('#fPlays').click();
-$('#fPlays').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importPlays(f)};
+$('#fPlays').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importConfig(f)};
 /* Pas de rebond de la page derrière quand on balaye vers le bas sur le lecteur */
 (()=>{
   const f=$('#full');let sy=0;
@@ -1008,6 +1074,7 @@ function baseList(){return S.plq?S.plq.filter(x=>x.file&&S.tracks.includes(x)):v
 function newPl(name){const p={id:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name,keys:[]};PL.push(p);plSave();setLastPl(p.id);return p}
 function curPage(){const b=document.body.classList;return b.contains('tv')?0:b.contains('pv')?2:1}
 function showPlaylists(dir){
+  if(S.sm){S.sm=false;S.sel.clear();document.body.classList.remove('sm');$('#selMode').textContent='Sélectionner'}
   if(S.ro){S.ro=false;document.body.classList.remove('ro');$('#reorder').textContent='Réorganiser'}
   S.plOpen=null;S.shown=0;
   const b=document.body.classList;b.remove('tv');b.add('pv');
@@ -1094,16 +1161,18 @@ function renderPlaylists(){
   box.appendChild(ul);
 }
 function renderPick(){
-  const box=$('#shPls');box.innerHTML='';const t=shT;
+  const box=$('#shPls');box.innerHTML='';const ts=shTs;
   const row=document.createElement('div');row.className='pnew';
   const inp=document.createElement('input');inp.placeholder='Nouvelle playlist…';inp.maxLength=40;
-  const go=()=>{const n=inp.value.trim();if(!n)return;newPl(n).keys.push(t.key);plSave();toast('Ajouté à « '+n+' »');renderPick();renderPlaylists();render()};
+  const go=()=>{const n=inp.value.trim();if(!n)return;const q=newPl(n);ts.forEach(t=>{if(!q.keys.includes(t.key))q.keys.push(t.key)});plSave();toast('Ajouté à « '+n+' »');renderPick();renderPlaylists();render()};
   inp.onkeydown=e=>{if(e.key==='Enter')go()};
   row.append(inp,mkBtn('nb m','Créer',go));box.appendChild(row);
   PL.forEach(q=>{
-    const on=q.keys.includes(t.key);
-    box.appendChild(mkBtn('nb pr'+(on?' on':''),(on?'✓ ':'')+q.name,()=>{
-      if(on)q.keys=q.keys.filter(k=>k!==t.key);else{q.keys.push(t.key);setLastPl(q.id)}
+    const have=ts.filter(t=>q.keys.includes(t.key)).length,all=have===ts.length;
+    const lbl=(all?'✓ ':have?'– ':'')+q.name+(ts.length>1?' ('+have+'/'+ts.length+')':'');
+    box.appendChild(mkBtn('nb pr'+(all?' on':''),lbl,()=>{
+      if(all){const set=new Set(ts.map(t=>t.key));q.keys=q.keys.filter(k=>!set.has(k))}
+      else{ts.forEach(t=>{if(!q.keys.includes(t.key))q.keys.push(t.key)});setLastPl(q.id)}
       plSave();renderPick();renderPlaylists();render();
     }));
   });
@@ -1119,6 +1188,34 @@ $('#plEdit').onclick=()=>setPle(!S.ple);
   m.addEventListener('scroll',()=>{const s=m.scrollTop>500;if(s!==on){on=s;b.classList.toggle('show',s)}},{passive:true});
   b.onclick=()=>m.scrollTo({top:0,behavior:'smooth'});
 })();
+/* Toucher long (dossiers) */
+function lpBind(el,fn){
+  let t=null,x0=0,y0=0;
+  const cancel=()=>{clearTimeout(t);t=null};
+  el.addEventListener('touchstart',e=>{const p=e.touches[0];x0=p.clientX;y0=p.clientY;el._lp=false;t=setTimeout(()=>{t=null;el._lp=true;try{if(navigator.vibrate)navigator.vibrate(15)}catch(_){}fn()},480)},{passive:true});
+  el.addEventListener('touchmove',e=>{const p=e.touches[0];if(Math.abs(p.clientX-x0)>10||Math.abs(p.clientY-y0)>10)cancel()},{passive:true});
+  el.addEventListener('touchend',()=>{cancel();setTimeout(()=>{el._lp=false},400)},{passive:true});
+  el.addEventListener('touchcancel',cancel,{passive:true});
+}
+function playFolder(f){
+  S.plq=null;S.clr=false;S.shown=0;S.folder=f;S.q='';$('#q').value='';S.hist=[];S.shuf=null;
+  const l=view().filter(x=>x.file);if(!l.length){needLink();return}
+  play(S.shuffle?l[rnd(l.length)]:l[0]);
+}
+$('#shPlayF').onclick=()=>{const f=shF;closeSheet();playFolder(f)};
+/* Sélection multiple (onglet Pistes) */
+S.sm=false;S.sel=new Set();
+function updSel(){if(S.sm&&curPage()===1)$('#count').textContent=S.sel.size+' sélectionnée'+(S.sel.size>1?'s':'')}
+function toggleSel(t,li){
+  if(S.sel.has(t))S.sel.delete(t);else S.sel.add(t);
+  const on=S.sel.has(t);li.classList.toggle('sel',on);
+  const ck=li.querySelector('.ck');if(ck)ck.classList.toggle('on',on);
+  updSel();
+}
+function setSm(v){S.sm=v;if(!v)S.sel.clear();document.body.classList.toggle('sm',v);$('#selMode').textContent=v?'Terminé':'Sélectionner';render()}
+$('#selMode').onclick=()=>setSm(!S.sm);
+$('#selAll').onclick=()=>{const l=view();if(l.every(t=>S.sel.has(t)))S.sel.clear();else l.forEach(t=>S.sel.add(t));render()};
+try{const sv=localStorage.getItem('anubis.sort');if(['new','old','az','za'].includes(sv)){S.sort=sv;$('#sort').value=sv}}catch(_){}
 let wipeT;
 $('#setWipe').onclick=e=>{
   const b=e.currentTarget,lbl=b.querySelector('b'),orig='Vider le cache de l’application';
